@@ -669,17 +669,20 @@ if st.session_state.results is not None:
                     else:
                         st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
 
-                with st.expander("Result Metadata"):
-                    m1, m2, m3 = st.columns(3)
-                    m1.write("**Document Type**", r["DOCUMENT_TYPE"])
-                    m1.write("**Document Date**", r["DOCUMENT_DATE"])
-                    m1.write("**State**", r["STATE"])
-                    m2.write("**Business Area**", r["BUSINESS_AREA"])
-                    m2.write("**Case Type**", r["CASE_TYPE"])
-                    m2.write("**Status**", r["CASE_STATUS"])
-                    m3.write("**Investigator**", r["INVESTIGATOR"])
-                    m3.write("**Entity**", r["ENTITY_NAME"])
-                    m3.write("**LOI**", r["LOI"])
+        with st.expander("Result Metadata"):
+            m1, m2, m3 = st.columns(3)
+        
+            m1.markdown(f"**Document Type**  \n{r['DOCUMENT_TYPE']}")
+            m1.markdown(f"**Document Date**  \n{r['DOCUMENT_DATE']}")
+            m1.markdown(f"**State**  \n{r['STATE']}")
+        
+            m2.markdown(f"**Business Area**  \n{r['BUSINESS_AREA']}")
+            m2.markdown(f"**Case Type**  \n{r['CASE_TYPE']}")
+            m2.markdown(f"**Status**  \n{r['CASE_STATUS']}")
+        
+            m3.markdown(f"**Investigator**  \n{r['INVESTIGATOR_DISPLAY']}")
+            m3.markdown(f"**Entity**  \n{r['ENTITY_NAME_DISPLAY']}")
+            m3.markdown(f"**LOI**  \n{r['LOI']}")
 
 # ==============================================================================
 # GOVERNANCE / PAYLOAD INSPECTOR
