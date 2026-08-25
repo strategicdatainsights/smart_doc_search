@@ -1,6 +1,4 @@
 import streamlit as st
-import pandas as pd
-from datetime import datetime, date
 
 # ==============================================================================
 # PAGE CONFIG
@@ -13,89 +11,125 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# WIREFRAME-MATCHED CSS
+# CSS — no external icon fonts, no Material Icons
 # ==============================================================================
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap');
-@import url('https://fonts.googleapis.com/icon?family=Material+Icons');
 
-* { font-family: 'Roboto', sans-serif !important; }
+html, body, [class*="css"] {
+    font-family: 'Roboto', sans-serif !important;
+}
 
-/* Nav bar */
-.nav-bar {
+/* Hide default streamlit chrome */
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding-top: 0 !important; }
+
+/* ── Nav bar ── */
+.sdp-nav {
     background: #3f51b5;
     color: white;
-    padding: 12px 24px;
+    padding: 14px 28px;
     display: flex;
     align-items: center;
-    gap: 16px;
+    justify-content: space-between;
     box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-    margin: -1rem -1rem 1.5rem -1rem;
-    border-radius: 0;
+    margin-bottom: 24px;
 }
-.nav-bar h1 { font-size: 18px; font-weight: 500; color: white; margin: 0; }
+.sdp-nav-title { font-size: 18px; font-weight: 500; }
+.sdp-nav-persona {
+    background: rgba(255,255,255,0.18);
+    border-radius: 4px;
+    padding: 5px 12px;
+    font-size: 12px;
+}
 
-/* Legend */
-.legend {
+/* ── Legend ── */
+.sdp-legend {
     background: white;
     border: 1px solid #e0e0e0;
     border-radius: 8px;
-    padding: 14px 20px;
+    padding: 12px 20px;
     margin-bottom: 20px;
     display: flex;
+    gap: 28px;
     align-items: center;
-    gap: 24px;
     font-size: 13px;
+    color: #444;
 }
-.required-star { color: #f44336; font-weight: bold; }
+.req { color: #f44336; font-weight: 700; }
 .smart-badge {
     display: inline-flex;
     align-items: center;
-    gap: 4px;
     font-size: 11px;
     color: #7c4dff;
     background: #ede7f6;
     padding: 2px 8px;
     border-radius: 12px;
-    font-weight: 500;
-    margin-left: 4px;
+    font-weight: 600;
+    margin-left: 6px;
+    vertical-align: middle;
 }
 
-/* Cards */
-.card {
+/* ── Cards ── */
+.sdp-card-header {
     background: white;
-    border-radius: 8px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
-    margin-bottom: 24px;
-    overflow: hidden;
-}
-.card-header {
+    border: 1px solid #e0e0e0;
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
     padding: 14px 20px;
-    border-bottom: 1px solid #e0e0e0;
     display: flex;
     align-items: center;
     justify-content: space-between;
 }
-.card-header h2 { font-size: 17px; font-weight: 500; color: #3f51b5; margin: 0; }
+.sdp-card-header h2 {
+    font-size: 17px;
+    font-weight: 500;
+    color: #3f51b5;
+    margin: 0;
+}
+.sdp-card-body {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 0 0 8px 8px;
+    padding: 20px;
+    margin-bottom: 24px;
+}
 
-/* Chip container */
-.chip-container {
-    padding: 10px 16px;
+/* ── Form labels ── */
+.sdp-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: #555;
+    margin-bottom: 3px;
+    display: block;
+}
+.sdp-hint {
+    font-size: 11px;
+    color: #999;
+    font-style: italic;
+    margin-top: 3px;
+}
+.sdp-divider {
+    border: none;
+    border-top: 1px solid #e0e0e0;
+    margin: 16px 0;
+}
+
+/* ── Chips ── */
+.sdp-chips {
     background: #f9f9f9;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
+    padding: 10px 16px;
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
     align-items: center;
-    margin-bottom: 12px;
+    margin-bottom: 14px;
 }
-.chip-label { font-size: 12px; color: #666; font-weight: 500; }
-.chip {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
+.sdp-chip-label { font-size: 12px; color: #666; font-weight: 500; }
+.sdp-chip {
     background: #e8eaf6;
     color: #3f51b5;
     padding: 4px 12px;
@@ -104,34 +138,51 @@ st.markdown("""
     font-weight: 500;
 }
 
-/* Results table */
-.results-table {
+/* ── Results table ── */
+.sdp-table-wrap {
+    background: white;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 24px;
+}
+.sdp-table {
     width: 100%;
     border-collapse: collapse;
     font-size: 13px;
 }
-.results-table thead { background: #fafafa; }
-.results-table th {
-    padding: 12px 16px;
+.sdp-table thead { background: #fafafa; }
+.sdp-table th {
+    padding: 11px 14px;
     text-align: left;
     font-weight: 500;
-    color: #666;
+    color: #555;
     border-bottom: 2px solid #e0e0e0;
     white-space: nowrap;
 }
-.results-table td {
-    padding: 12px 16px;
+.sdp-table td {
+    padding: 11px 14px;
     border-bottom: 1px solid #f0f0f0;
-    vertical-align: middle;
+    vertical-align: top;
 }
-.results-table tr:hover { background: #f5f5f5; }
-.link { color: #3f51b5; font-weight: 500; text-decoration: none; }
-.snippet { font-style: italic; color: #555; }
-.snippet mark { background: #fff59d; padding: 0 2px; border-radius: 2px; }
-.lock-icon { color: #f57c00; font-size: 14px; vertical-align: middle; margin-left: 4px; }
+.sdp-table tr:last-child td { border-bottom: none; }
+.sdp-table tr:hover td { background: #f5f5f5; }
+.sdp-trk-link { color: #3f51b5; font-weight: 500; text-decoration: none; }
+.sdp-snippet { font-style: italic; color: #555; max-width: 380px; display: block; }
+.sdp-snippet mark { background: #fff59d; padding: 0 2px; border-radius: 2px; font-style: normal; }
+.sdp-lock { color: #f57c00; }
+.sdp-dl-btn {
+    padding: 4px 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    background: white;
+    cursor: pointer;
+    font-size: 12px;
+}
+.sdp-dl-denied { color: #f44336; font-size: 12px; }
 
-/* Pagination */
-.pagination-bar {
+/* ── Pagination ── */
+.sdp-pagination {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -142,56 +193,66 @@ st.markdown("""
     color: #666;
 }
 
-/* User persona badge */
-.persona-badge {
-    background: rgba(255,255,255,0.15);
-    border-radius: 4px;
-    padding: 4px 10px;
-    font-size: 12px;
-    color: white;
+/* ── Button overrides ── */
+div[data-testid="stButton"] > button {
+    font-family: 'Roboto', sans-serif !important;
+    font-weight: 500 !important;
+    border-radius: 4px !important;
+    transition: background 0.15s;
 }
 
-/* Form labels */
-.field-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: #555;
-    margin-bottom: 2px;
+/* ── Expander overrides — remove arrow icon artifacts ── */
+div[data-testid="stExpander"] > details > summary {
+    font-size: 14px !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    background: #fafafa !important;
+    padding: 12px 16px !important;
+    border-radius: 0 !important;
+    list-style: none !important;
 }
-.field-hint {
-    font-size: 11px;
-    color: #999;
-    font-style: italic;
-    margin-top: 2px;
-}
-
-/* Streamlit overrides */
+div[data-testid="stExpander"] > details > summary::-webkit-details-marker { display: none; }
 div[data-testid="stExpander"] {
     border: 1px solid #e0e0e0 !important;
     border-radius: 4px !important;
     margin-bottom: 1px !important;
+    overflow: hidden !important;
 }
-div[data-testid="stExpander"] summary {
-    padding: 12px 16px !important;
-    background: #fafafa !important;
-    font-size: 14px !important;
-    font-weight: 500 !important;
+div[data-testid="stExpander"] > details {
+    border: none !important;
 }
-.stButton > button {
-    font-family: 'Roboto', sans-serif !important;
-    font-weight: 500 !important;
+
+/* ── Input / select consistency ── */
+div[data-testid="stTextInput"] input,
+div[data-testid="stTextArea"] textarea,
+div[data-testid="stSelectbox"] select {
+    border: 1px solid #ccc !important;
     border-radius: 4px !important;
+    font-size: 14px !important;
+    font-family: 'Roboto', sans-serif !important;
 }
-.stButton > button[kind="primary"] {
-    background: #3f51b5 !important;
-    color: white !important;
-}
-.stSelectbox label, .stTextInput label, .stTextArea label,
-.stDateInput label, .stMultiSelect label {
+div[data-testid="stTextInput"] label,
+div[data-testid="stTextArea"] label,
+div[data-testid="stSelectbox"] label,
+div[data-testid="stDateInput"] label,
+div[data-testid="stMultiSelect"] label {
     font-size: 12px !important;
     font-weight: 500 !important;
     color: #555 !important;
 }
+
+/* Masking info badge */
+.access-badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
+}
+.access-full { background: #e8f5e9; color: #2e7d32; }
+.access-masked { background: #fff3e0; color: #e65100; }
+.access-denied { background: #ffebee; color: #c62828; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -199,15 +260,15 @@ div[data-testid="stExpander"] summary {
 # MOCK DATA
 # ==============================================================================
 MOCK_USERS = {
-    "Regulator — RI (State Regulator, Full Access)": {
-        "username": "elizabeth.rosso@regulator.ri.gov",
+    "Regulator — RI (Full Access, Unmasked)": {
+        "username": "e.rosso@regulator.ri.gov",
         "role": "STATE_REGULATOR",
         "state": "RI",
         "entitled_business_areas": ["Market Regulation", "Complaints", "Exams"],
         "can_download": True,
         "sees_unmasked_pii": True,
     },
-    "Analyst — RI (Financial Exams, Masked)": {
+    "Analyst — RI (Exams Only, Masked)": {
         "username": "j.smith@state.ri.gov",
         "role": "FINANCIAL_ANALYST",
         "state": "RI",
@@ -215,7 +276,7 @@ MOCK_USERS = {
         "can_download": True,
         "sees_unmasked_pii": False,
     },
-    "Analyst — MA (Financial Exams, No Download)": {
+    "Analyst — MA (Exams Only, No Download)": {
         "username": "d.jones@state.ma.gov",
         "role": "FINANCIAL_ANALYST",
         "state": "MA",
@@ -257,7 +318,7 @@ MOCK_DOCUMENTS = [
         "INVESTIGATOR": "R. Vance",
         "ENTITY_NAME": "Beacon Mutual Insurance",
         "ENTITY_NAME_MASKED": "Be**** Mu**** Insurance",
-        "CHUNK_TEXT": "In regards to the accident that occurred on the evening of December 19th...",
+        "CHUNK_TEXT": "In regards to the accident that occurred on the evening of December 19th the claimant filed a formal dispute.",
         "DOC_TYPE": ".pdf",
     },
     {
@@ -274,7 +335,7 @@ MOCK_DOCUMENTS = [
         "INVESTIGATOR": "A. Miller",
         "ENTITY_NAME": "Progressive Insurance",
         "ENTITY_NAME_MASKED": "Pr********* Insurance",
-        "CHUNK_TEXT": "In regards to the accident that occurred on Monday, the policyholder submitted a formal complaint.",
+        "CHUNK_TEXT": "In regards to the accident that occurred on Monday the policyholder submitted a formal complaint regarding claim denial.",
         "DOC_TYPE": ".pdf",
     },
     {
@@ -308,42 +369,61 @@ MOCK_DOCUMENTS = [
         "INVESTIGATOR": "C. Davis",
         "ENTITY_NAME": "Cornwall Group LLC",
         "ENTITY_NAME_MASKED": "Co****** Gr*** LLC",
-        "CHUNK_TEXT": "Details of accident damage assessment from third party inspector retained by Cornwall.",
+        "CHUNK_TEXT": "Details of accident damage assessment from third party inspector retained by Cornwall Group.",
         "DOC_TYPE": ".docx",
     },
 ]
 
 # ==============================================================================
-# NAV BAR
+# SESSION STATE
 # ==============================================================================
 if "selected_user" not in st.session_state:
     st.session_state.selected_user = list(MOCK_USERS.keys())[0]
+if "search_results" not in st.session_state:
+    st.session_state.search_results = None
+if "search_query_used" not in st.session_state:
+    st.session_state.search_query_used = ""
+if "show_col_case_type" not in st.session_state:
+    st.session_state.show_col_case_type = False
+if "show_col_investigator" not in st.session_state:
+    st.session_state.show_col_investigator = False
+if "show_col_status" not in st.session_state:
+    st.session_state.show_col_status = False
+if "show_col_entity" not in st.session_state:
+    st.session_state.show_col_entity = False
 
 user_info = MOCK_USERS[st.session_state.selected_user]
 
+# ==============================================================================
+# NAV BAR
+# ==============================================================================
+pii_label = "Unmasked PII" if user_info["sees_unmasked_pii"] else "Masked PII"
+dl_label = "Download: Yes" if user_info["can_download"] else "Download: No"
 st.markdown(f"""
-<div class="nav-bar">
-    <h1>Smart Document Platform — Search</h1>
-    <span class="persona-badge">👤 {user_info['username']} &nbsp;|&nbsp; {user_info['state']} &nbsp;|&nbsp; {user_info['role']}</span>
+<div class="sdp-nav">
+    <span class="sdp-nav-title">Smart Document Platform — Search</span>
+    <span class="sdp-nav-persona">
+        👤 {user_info['username']} &nbsp;·&nbsp; {user_info['state']} &nbsp;·&nbsp; {user_info['role']} &nbsp;·&nbsp; {pii_label} &nbsp;·&nbsp; {dl_label}
+    </span>
 </div>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# USER PERSONA SWITCHER (inline, not sidebar)
+# PERSONA SWITCHER
 # ==============================================================================
-with st.container():
-    pcol1, pcol2 = st.columns([3, 1])
-    with pcol2:
-        selected_user = st.selectbox(
-            "Active Persona (Demo)",
-            list(MOCK_USERS.keys()),
-            index=list(MOCK_USERS.keys()).index(st.session_state.selected_user),
-            key="persona_switcher",
-            label_visibility="collapsed"
-        )
-        if selected_user != st.session_state.selected_user:
-            st.session_state.selected_user = selected_user
-            st.rerun()
+pc1, pc2, pc3 = st.columns([2, 2, 1])
+with pc3:
+    new_user = st.selectbox(
+        "Switch persona",
+        list(MOCK_USERS.keys()),
+        index=list(MOCK_USERS.keys()).index(st.session_state.selected_user),
+        label_visibility="collapsed",
+        key="persona_selector"
+    )
+    if new_user != st.session_state.selected_user:
+        st.session_state.selected_user = new_user
+        st.session_state.search_results = None
+        st.rerun()
 
 user_info = MOCK_USERS[st.session_state.selected_user]
 
@@ -351,138 +431,198 @@ user_info = MOCK_USERS[st.session_state.selected_user]
 # LEGEND
 # ==============================================================================
 st.markdown("""
-<div class="legend">
-    <div><span class="required-star">*</span> &nbsp;Required Field</div>
-    <div><span class="smart-badge">✦ Smart</span> &nbsp;AI-powered search (Snowflake Cortex)</div>
-    <div><span style="color:#f57c00;">🔒</span> &nbsp;Locked document</div>
+<div class="sdp-legend">
+    <span><span class="req">*</span>&nbsp; Required Field</span>
+    <span><span class="smart-badge">✦ Smart</span>&nbsp; AI-powered search (Snowflake Cortex)</span>
+    <span><span style="color:#f57c00;">🔒</span>&nbsp; Locked document</span>
 </div>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# SEARCH CRITERIA CARD
+# SEARCH CRITERIA
 # ==============================================================================
-st.markdown('<div class="card"><div class="card-header"><h2>Search Criteria</h2></div></div>', unsafe_allow_html=True)
+st.markdown('<div class="sdp-card-header"><h2>Search Criteria</h2></div><div class="sdp-card-body">', unsafe_allow_html=True)
 
-with st.container():
-    # Required fields
-    col_ba, _ = st.columns([1, 2])
-    with col_ba:
-        st.markdown('<div class="field-label">Business Area <span class="required-star">*</span></div>', unsafe_allow_html=True)
-        business_area = st.selectbox(
-            "Business Area",
-            [""] + user_info["entitled_business_areas"],
-            format_func=lambda x: "-- Select Business Area --" if x == "" else x,
-            label_visibility="collapsed"
+# Business Area
+st.markdown('<span class="sdp-label">Business Area <span class="req">*</span></span>', unsafe_allow_html=True)
+ba_options = [""] + user_info["entitled_business_areas"]
+business_area = st.selectbox(
+    "Business Area",
+    ba_options,
+    format_func=lambda x: "-- Select Business Area --" if x == "" else x,
+    label_visibility="collapsed",
+    key="ba_select"
+)
+
+st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
+
+# Search Document Contents
+st.markdown('<span class="sdp-label">Search Document Contents <span class="req">*</span><span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
+search_query = st.text_area(
+    "Search Document Contents",
+    placeholder="Enter search terms to find within document text...",
+    height=90,
+    label_visibility="collapsed",
+    key="search_query"
+)
+st.markdown('<span class="sdp-hint">Search within the text of all attached documents. Minimum 3 characters.</span>', unsafe_allow_html=True)
+
+st.markdown("<div style='height:16px'></div>", unsafe_allow_html=True)
+
+# ── Accordion sections ──
+
+with st.expander("Case Details", expanded=True):
+    ca1, ca2 = st.columns(2)
+    with ca1:
+        case_type = st.selectbox(
+            "Case Type",
+            ["", "Complaints", "Enforcement", "Market Conduct Exams"],
+            format_func=lambda x: "-- Select --" if x == "" else x,
+            key="case_type"
+        )
+    with ca2:
+        tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12345", key="tracking_id")
+
+    ca3, ca4 = st.columns(2)
+    with ca3:
+        st.markdown('<span class="sdp-label">Investigator <span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
+        investigator = st.text_input(
+            "Investigator",
+            placeholder="Search by investigator name",
+            label_visibility="collapsed",
+            key="investigator"
+        )
+        st.markdown('<span class="sdp-hint">Searches Primary and Secondary investigators.</span>', unsafe_allow_html=True)
+    with ca4:
+        case_status = st.selectbox(
+            "Status",
+            ["", "Open", "Closed", "Under Review", "Pending"],
+            format_func=lambda x: "-- Select --" if x == "" else x,
+            key="case_status"
         )
 
-    st.markdown('<div class="field-label">Search Document Contents <span class="required-star">*</span> <span class="smart-badge">✦ Smart</span></div>', unsafe_allow_html=True)
-    search_query = st.text_area(
-        "Search Document Contents",
-        placeholder="Enter search terms to find within document text...",
-        height=100,
-        label_visibility="collapsed"
-    )
-    st.markdown('<div class="field-hint">Search within the text of all attached documents.</div>', unsafe_allow_html=True)
+with st.expander("Entity"):
+    e1, e2 = st.columns(2)
+    with e1:
+        st.markdown('<span class="sdp-label">Entity Name <span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
+        entity_name = st.text_input(
+            "Entity Name",
+            placeholder="Search by person or company name",
+            label_visibility="collapsed",
+            key="entity_name"
+        )
+        st.markdown('<span class="sdp-hint">Handles partial names, company names, or combinations.</span>', unsafe_allow_html=True)
+    with e2:
+        naic_group = st.selectbox(
+            "NAIC Group Number",
+            ["", "9083 - 21st Century Company", "8056 - 53rd Order of Insurance"],
+            format_func=lambda x: "-- Select --" if x == "" else x,
+            key="naic_group"
+        )
 
-    st.markdown("<br>", unsafe_allow_html=True)
+with st.expander("Dates"):
+    d1, d2 = st.columns(2)
+    with d1:
+        st.write("Case Initiated")
+        di1, di2 = st.columns(2)
+        with di1:
+            case_init_from = st.date_input("From", value=None, key="ci_from", label_visibility="collapsed")
+        with di2:
+            case_init_to = st.date_input("To", value=None, key="ci_to", label_visibility="collapsed")
+    with d2:
+        st.write("Case Opened")
+        do1, do2 = st.columns(2)
+        with do1:
+            case_open_from = st.date_input("From", value=None, key="co_from", label_visibility="collapsed")
+        with do2:
+            case_open_to = st.date_input("To", value=None, key="co_to", label_visibility="collapsed")
 
-    # Accordion sections
-    with st.expander("Case Details", expanded=True):
-        cd1, cd2 = st.columns(2)
-        with cd1:
-            st.markdown('<div class="field-label">Case Type</div>', unsafe_allow_html=True)
-            case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Conduct Exams"], format_func=lambda x: "-- Select --" if x == "" else x, label_visibility="collapsed")
-        with cd2:
-            st.markdown('<div class="field-label">Tracking ID</div>', unsafe_allow_html=True)
-            tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12345", label_visibility="collapsed")
-        cd3, cd4 = st.columns(2)
-        with cd3:
-            st.markdown('<div class="field-label">Investigator <span class="smart-badge">✦ Smart</span></div>', unsafe_allow_html=True)
-            investigator = st.text_input("Investigator", placeholder="Search by investigator name", label_visibility="collapsed")
-            st.markdown('<div class="field-hint">Searches Primary and Secondary investigators.</div>', unsafe_allow_html=True)
-        with cd4:
-            st.markdown('<div class="field-label">Status</div>', unsafe_allow_html=True)
-            case_status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"], format_func=lambda x: "-- Select --" if x == "" else x, label_visibility="collapsed")
+    d3, d4 = st.columns(2)
+    with d3:
+        st.write("Case Closed")
+        dc1, dc2 = st.columns(2)
+        with dc1:
+            case_close_from = st.date_input("From", value=None, key="cc_from", label_visibility="collapsed")
+        with dc2:
+            case_close_to = st.date_input("To", value=None, key="cc_to", label_visibility="collapsed")
+    with d4:
+        st.write("File Upload")
+        df1, df2 = st.columns(2)
+        with df1:
+            file_upload_from = st.date_input("From", value=None, key="fu_from", label_visibility="collapsed")
+        with df2:
+            file_upload_to = st.date_input("To", value=None, key="fu_to", label_visibility="collapsed")
 
-    with st.expander("Entity"):
-        e1, e2 = st.columns(2)
-        with e1:
-            st.markdown('<div class="field-label">Entity Name <span class="smart-badge">✦ Smart</span></div>', unsafe_allow_html=True)
-            entity_name = st.text_input("Entity Name", placeholder="Search by person or company name", label_visibility="collapsed")
-            st.markdown('<div class="field-hint">Handles partial names, company names, or combinations.</div>', unsafe_allow_html=True)
-        with e2:
-            st.markdown('<div class="field-label">NAIC Group Number</div>', unsafe_allow_html=True)
-            naic_group = st.selectbox("NAIC Group Number", ["", "9083 - 21st Century Company", "8056 - 53rd Order of Insurance"], format_func=lambda x: "-- Select --" if x == "" else x, label_visibility="collapsed")
+with st.expander("Document"):
+    doc1, doc2 = st.columns(2)
+    with doc1:
+        st.markdown('<span class="sdp-label">Document Name <span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
+        doc_name = st.text_input(
+            "Document Name",
+            placeholder="e.g., accident report, policy letter",
+            label_visibility="collapsed",
+            key="doc_name"
+        )
+    with doc2:
+        file_type = st.selectbox(
+            "File Type",
+            ["", ".pdf", ".docx / .doc", ".xlsx", ".msg", ".ppt", ".csv"],
+            format_func=lambda x: "-- Select --" if x == "" else x,
+            key="file_type"
+        )
 
-    with st.expander("Dates"):
-        da1, da2 = st.columns(2)
-        with da1:
-            st.markdown('<div class="field-label">Case Initiated</div>', unsafe_allow_html=True)
-            ci1, ci2 = st.columns(2)
-            with ci1:
-                case_init_from = st.date_input("Case Initiated From", value=None, label_visibility="collapsed")
-            with ci2:
-                case_init_to = st.date_input("Case Initiated To", value=None, label_visibility="collapsed")
-        with da2:
-            st.markdown('<div class="field-label">Case Opened</div>', unsafe_allow_html=True)
-            co1, co2 = st.columns(2)
-            with co1:
-                case_open_from = st.date_input("Case Opened From", value=None, label_visibility="collapsed")
-            with co2:
-                case_open_to = st.date_input("Case Opened To", value=None, label_visibility="collapsed")
-        da3, da4 = st.columns(2)
-        with da3:
-            st.markdown('<div class="field-label">Case Closed</div>', unsafe_allow_html=True)
-            cc1, cc2 = st.columns(2)
-            with cc1:
-                case_close_from = st.date_input("Case Closed From", value=None, label_visibility="collapsed")
-            with cc2:
-                case_close_to = st.date_input("Case Closed To", value=None, label_visibility="collapsed")
-        with da4:
-            st.markdown('<div class="field-label">File Upload</div>', unsafe_allow_html=True)
-            fu1, fu2 = st.columns(2)
-            with fu1:
-                file_upload_from = st.date_input("File Upload From", value=None, label_visibility="collapsed")
-            with fu2:
-                file_upload_to = st.date_input("File Upload To", value=None, label_visibility="collapsed")
+with st.expander("Additional Details"):
+    ad1, ad2, ad3 = st.columns(3)
+    with ad1:
+        case_subtype = st.selectbox(
+            "Case Sub-Type",
+            ["", "Administrative Report", "Franchise", "Inquiry", "Investigations", "Market Conduct", "Multi-State", "PBM", "Securities"],
+            format_func=lambda x: "-- Select --" if x == "" else x,
+            key="case_subtype"
+        )
+    with ad2:
+        state_keyword = st.multiselect(
+            "State Keyword",
+            ["COVID-19", "Data Breach", "Fires Summer 2023", "Hurricane", "Pet Insurance", "Tornado"],
+            key="state_keyword"
+        )
+    with ad3:
+        reason = st.selectbox(
+            "Reason",
+            ["", "Reason 1", "Reason 2", "Reason 3"],
+            format_func=lambda x: "-- Select --" if x == "" else x,
+            key="reason"
+        )
+    ad4, ad5 = st.columns(2)
+    with ad4:
+        st.markdown('<span class="sdp-label">Line of Insurance <span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
+        loi = st.text_input(
+            "Line of Insurance",
+            placeholder="e.g., property, casualty, auto",
+            label_visibility="collapsed",
+            key="loi"
+        )
+        st.markdown('<span class="sdp-hint">Searches Coverage Type, Line of Insurance, Line of Business, and RIRS Line of Business.</span>', unsafe_allow_html=True)
+    with ad5:
+        st.markdown('<span class="sdp-label">Disposition <span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
+        disposition = st.text_input(
+            "Disposition",
+            placeholder="e.g., settled, dismissed",
+            label_visibility="collapsed",
+            key="disposition"
+        )
 
-    with st.expander("Document"):
-        doc1, doc2 = st.columns(2)
-        with doc1:
-            st.markdown('<div class="field-label">Document Name <span class="smart-badge">✦ Smart</span></div>', unsafe_allow_html=True)
-            doc_name = st.text_input("Document Name", placeholder="e.g., accident report, policy letter", label_visibility="collapsed")
-        with doc2:
-            st.markdown('<div class="field-label">File Type</div>', unsafe_allow_html=True)
-            file_type = st.selectbox("File Type", ["", ".pdf", ".docx / .doc", ".xlsx", ".msg", ".ppt", ".csv"], format_func=lambda x: "-- Select --" if x == "" else x, label_visibility="collapsed")
+st.markdown("</div>", unsafe_allow_html=True)
 
-    with st.expander("Additional Details"):
-        ad1, ad2, ad3 = st.columns(3)
-        with ad1:
-            st.markdown('<div class="field-label">Case Sub-Type</div>', unsafe_allow_html=True)
-            case_subtype = st.selectbox("Case Sub-Type", ["", "Administrative Report", "Franchise", "Inquiry", "Investigations", "Market Conduct", "Multi-State", "PBM", "Securities"], format_func=lambda x: "-- Select --" if x == "" else x, label_visibility="collapsed")
-        with ad2:
-            st.markdown('<div class="field-label">State Keyword</div>', unsafe_allow_html=True)
-            state_keyword = st.multiselect("State Keyword", ["COVID-19", "Data Breach", "Fires Summer 2023", "Hurricane", "Pet Insurance", "Tornado"], label_visibility="collapsed")
-        with ad3:
-            st.markdown('<div class="field-label">Reason</div>', unsafe_allow_html=True)
-            reason = st.selectbox("Reason", ["", "Reason 1", "Reason 2", "Reason 3"], format_func=lambda x: "-- Select --" if x == "" else x, label_visibility="collapsed")
-        ad4, ad5 = st.columns(2)
-        with ad4:
-            st.markdown('<div class="field-label">Line of Insurance <span class="smart-badge">✦ Smart</span></div>', unsafe_allow_html=True)
-            loi = st.text_input("Line of Insurance", placeholder="e.g., property, casualty, auto", label_visibility="collapsed")
-            st.markdown('<div class="field-hint">Searches Coverage Type, Line of Insurance, Line of Business, and RIRS Line of Business.</div>', unsafe_allow_html=True)
-        with ad5:
-            st.markdown('<div class="field-label">Disposition <span class="smart-badge">✦ Smart</span></div>', unsafe_allow_html=True)
-            disposition = st.text_input("Disposition", placeholder="e.g., settled, dismissed", label_visibility="collapsed")
-
-# Active filter chips
+# ── Active filter chips ──
 active_chips = []
 if business_area:
     active_chips.append(f"Business Area: {business_area}")
 if case_type:
     active_chips.append(f"Case Type: {case_type}")
 if search_query:
-    active_chips.append(f"Contents: \"{search_query[:30]}{'...' if len(search_query) > 30 else ''}\"")
+    q_short = search_query[:28] + "..." if len(search_query) > 28 else search_query
+    active_chips.append(f'Contents: "{q_short}"')
 if investigator:
     active_chips.append(f"Investigator: {investigator}")
 if entity_name:
@@ -493,17 +633,18 @@ if tracking_id:
     active_chips.append(f"Tracking ID: {tracking_id}")
 
 if active_chips:
-    chips_html = '<div class="chip-container"><span class="chip-label">Active Filters:</span>'
-    for chip in active_chips:
-        chips_html += f'<span class="chip">{chip}</span>'
+    chips_html = '<div class="sdp-chips"><span class="sdp-chip-label">Active Filters:</span>'
+    for c in active_chips:
+        chips_html += f'<span class="sdp-chip">{c}</span>'
     chips_html += '</div>'
     st.markdown(chips_html, unsafe_allow_html=True)
 
-# Search / Reset buttons
-bcol1, bcol2, bcol3 = st.columns([1, 1, 6])
-with bcol1:
-    search_clicked = st.button("🔍 Search", type="primary", use_container_width=True)
-with bcol2:
+# ── Search / Reset buttons ──
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+b1, b2, b3 = st.columns([1, 1, 6])
+with b1:
+    search_clicked = st.button("🔍  Search", type="primary", use_container_width=True)
+with b2:
     reset_clicked = st.button("Reset", use_container_width=True)
 
 # ==============================================================================
@@ -512,15 +653,15 @@ with bcol2:
 def run_search(user, query, ba, ct, status, inv, entity, tid, ft):
     results = []
     for doc in MOCK_DOCUMENTS:
-        # ABAC: state isolation
         if doc["STATE"] != user["state"]:
             continue
-        # ABAC: business area entitlement
-        if ba and doc["BUSINESS_AREA"] != ba:
-            continue
-        if ba == "" and doc["BUSINESS_AREA"] not in user["entitled_business_areas"]:
-            continue
-        # Structured filters
+        entitled = user["entitled_business_areas"]
+        if ba:
+            if doc["BUSINESS_AREA"] != ba:
+                continue
+        else:
+            if doc["BUSINESS_AREA"] not in entitled:
+                continue
         if ct and doc["CASE_TYPE"] != ct:
             continue
         if status and doc["CASE_STATUS"] != status:
@@ -533,159 +674,180 @@ def run_search(user, query, ba, ct, status, inv, entity, tid, ft):
             continue
         if ft and doc["DOC_TYPE"] != ft:
             continue
-        # Semantic search (mock keyword match)
+
         snippet = doc["CHUNK_TEXT"]
-        if query:
-            if query.lower() not in snippet.lower() and query.lower() not in doc["FILE_NAME"].lower():
+        if query and len(query) >= 3:
+            hit = False
+            for term in query.lower().split():
+                if term in snippet.lower() or term in doc["FILE_NAME"].lower():
+                    hit = True
+                    # highlight
+                    for word in snippet.split():
+                        if term in word.lower():
+                            snippet = snippet.replace(word, f"<mark>{word}</mark>")
+            if not hit:
                 continue
-            # Highlight keyword
-            highlighted = snippet.replace(
-                query, f"<mark>{query}</mark>"
-            ).replace(
-                query.lower(), f"<mark>{query.lower()}</mark>"
-            ).replace(
-                query.capitalize(), f"<mark>{query.capitalize()}</mark>"
-            )
-        else:
-            highlighted = snippet
-        results.append({**doc, "SNIPPET": highlighted})
+
+        results.append({**doc, "SNIPPET": snippet})
     return results
+
+# ==============================================================================
+# VALIDATION + SEARCH EXECUTION
+# ==============================================================================
+if search_clicked:
+    errors = []
+    if not business_area:
+        errors.append("Business Area is required.")
+    if not search_query or len(search_query.strip()) < 3:
+        errors.append("Search Document Contents is required (minimum 3 characters).")
+    if errors:
+        for e in errors:
+            st.error(e)
+    else:
+        results = run_search(
+            user_info, search_query, business_area,
+            case_type, case_status, investigator,
+            entity_name, tracking_id, file_type
+        )
+        st.session_state.search_results = results
+        st.session_state.search_query_used = search_query
+
+if reset_clicked:
+    st.session_state.search_results = None
+    st.session_state.search_query_used = ""
+    st.rerun()
 
 # ==============================================================================
 # RESULTS
 # ==============================================================================
-if search_clicked or ("search_results" in st.session_state and st.session_state.search_results is not None):
+if st.session_state.search_results is not None:
+    results = st.session_state.search_results
+    query_used = st.session_state.search_query_used
 
-    if search_clicked:
-        if not business_area:
-            st.error("Business Area is required.")
-            st.stop()
-        if not search_query:
-            st.error("Search Document Contents is required.")
-            st.stop()
-        results = run_search(user_info, search_query, business_area, case_type, case_status, investigator, entity_name, tracking_id, file_type)
-        st.session_state.search_results = results
-        st.session_state.search_query_used = search_query
-    else:
-        results = st.session_state.get("search_results", [])
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    query_used = st.session_state.get("search_query_used", "")
-
-    st.markdown("<br>", unsafe_allow_html=True)
-
-    # Results card header
-    rcol1, rcol2 = st.columns([4, 1])
-    with rcol1:
-        st.markdown(f'<div class="card-header"><h2>Search Results <span style="font-weight:300;color:#666;font-size:14px;">({len(results)} results)</span></h2></div>', unsafe_allow_html=True)
-    with rcol2:
+    # Results header row
+    rh1, rh2, rh3 = st.columns([4, 1, 1])
+    with rh1:
+        st.markdown(f"""
+        <div style="font-size:17px;font-weight:500;color:#3f51b5;padding:4px 0;">
+            Search Results
+            <span style="font-weight:300;color:#888;font-size:14px;margin-left:8px;">({len(results)} results)</span>
+        </div>
+        """, unsafe_allow_html=True)
+    with rh2:
         st.button("⬇ Export to Excel", use_container_width=True)
+    with rh3:
+        show_col_picker = st.button("⚙ Columns", use_container_width=True)
 
     if not results:
-        st.info("No documents match your search criteria or entitlements.")
+        st.info("No documents match your search criteria or access entitlements.")
     else:
-        # Column picker state
-        if "show_cols" not in st.session_state:
-            st.session_state.show_cols = {
-                "File Name": True, "Summary": True, "Upload Date": True, "Created By": True,
-                "Case Type": False, "Investigator": False, "Status": False, "Entity Name": False,
-            }
+        # Column picker inline
+        if show_col_picker:
+            st.session_state.col_picker_open = not st.session_state.get("col_picker_open", False)
 
-        # Build table
-        table_rows = ""
+        if st.session_state.get("col_picker_open", False):
+            with st.container():
+                st.markdown("**Customize Columns** — Attachment ID and Tracking ID are always visible.")
+                cp1, cp2, cp3, cp4 = st.columns(4)
+                with cp1:
+                    st.session_state.show_col_case_type = st.checkbox("Case Type", value=st.session_state.show_col_case_type)
+                with cp2:
+                    st.session_state.show_col_investigator = st.checkbox("Investigator", value=st.session_state.show_col_investigator)
+                with cp3:
+                    st.session_state.show_col_status = st.checkbox("Status", value=st.session_state.show_col_status)
+                with cp4:
+                    st.session_state.show_col_entity = st.checkbox("Entity Name", value=st.session_state.show_col_entity)
+                st.markdown("<hr style='border-color:#e0e0e0;margin:8px 0;'>", unsafe_allow_html=True)
+
+        # Build table HTML
+        header = """
+        <th>Attachment ID</th>
+        <th>Tracking ID</th>
+        <th>File Name</th>
+        <th>Summary</th>
+        <th>Upload Date</th>
+        <th>Created By</th>
+        """
+        if st.session_state.show_col_case_type:
+            header += "<th>Case Type</th>"
+        if st.session_state.show_col_investigator:
+            header += "<th>Investigator</th>"
+        if st.session_state.show_col_status:
+            header += "<th>Status</th>"
+        if st.session_state.show_col_entity:
+            header += "<th>Entity Name</th>"
+        header += "<th>Actions</th>"
+
+        rows_html = ""
         for doc in results:
             entity_display = doc["ENTITY_NAME"] if user_info["sees_unmasked_pii"] else doc["ENTITY_NAME_MASKED"]
-            locked_icon = ' <span class="lock-icon">🔒</span>' if doc["LOCKED"] else ""
-            snippet_cell = f'<span class="snippet">&ldquo;{doc["SNIPPET"]}&rdquo;</span>'
+            lock_html = " 🔒" if doc["LOCKED"] else ""
+            dl_html = "⬇ Download" if user_info["can_download"] else '<span class="sdp-dl-denied">🚫 Restricted</span>'
 
             row = f"""
             <tr>
                 <td>{doc['ATTACHMENT_ID']}</td>
-                <td><a class="link" href="#">{doc['TRACKING_ID']}</a></td>
+                <td><a class="sdp-trk-link" href="#">{doc['TRACKING_ID']}</a></td>
+                <td style="white-space:nowrap;">{doc['FILE_NAME']}{lock_html}</td>
+                <td><span class="sdp-snippet">&ldquo;{doc['SNIPPET']}&rdquo;</span></td>
+                <td style="white-space:nowrap;">{doc['UPLOAD_DATE']}</td>
+                <td>{doc['CREATED_BY']}</td>
             """
-            if st.session_state.show_cols.get("File Name"):
-                row += f"<td>{doc['FILE_NAME']}{locked_icon}</td>"
-            if st.session_state.show_cols.get("Summary"):
-                row += f"<td style='max-width:380px;'>{snippet_cell}</td>"
-            if st.session_state.show_cols.get("Upload Date"):
-                row += f"<td style='white-space:nowrap;'>{doc['UPLOAD_DATE']}</td>"
-            if st.session_state.show_cols.get("Created By"):
-                row += f"<td>{doc['CREATED_BY']}</td>"
-            if st.session_state.show_cols.get("Case Type"):
+            if st.session_state.show_col_case_type:
                 row += f"<td>{doc['CASE_TYPE']}</td>"
-            if st.session_state.show_cols.get("Investigator"):
+            if st.session_state.show_col_investigator:
                 row += f"<td>{doc['INVESTIGATOR']}</td>"
-            if st.session_state.show_cols.get("Status"):
+            if st.session_state.show_col_status:
                 row += f"<td>{doc['CASE_STATUS']}</td>"
-            if st.session_state.show_cols.get("Entity Name"):
+            if st.session_state.show_col_entity:
                 row += f"<td>{entity_display}</td>"
-
-            dl_btn = "⬇" if user_info["can_download"] else "🚫"
-            row += f"<td><button style='padding:4px 10px;border:1px solid #ccc;border-radius:4px;background:white;cursor:pointer;font-size:12px;'>{dl_btn}</button></td>"
-            row += "</tr>"
-            table_rows += row
-
-        # Header
-        header_cols = '<th>Attachment ID</th><th>Tracking ID</th>'
-        for col, visible in st.session_state.show_cols.items():
-            if visible:
-                header_cols += f"<th>{col}</th>"
-        header_cols += "<th>Actions</th>"
+            row += f"<td>{dl_html}</td></tr>"
+            rows_html += row
 
         table_html = f"""
-        <div style="overflow-x:auto;background:white;border-radius:8px;box-shadow:0 1px 3px rgba(0,0,0,0.12);">
-            <table class="results-table">
-                <thead><tr>{header_cols}</tr></thead>
-                <tbody>{table_rows}</tbody>
+        <div class="sdp-table-wrap">
+            <table class="sdp-table">
+                <thead><tr>{header}</tr></thead>
+                <tbody>{rows_html}</tbody>
             </table>
-            <div class="pagination-bar">
+            <div class="sdp-pagination">
                 <span>Showing 1–{len(results)} of {len(results)} results</span>
-                <span>Rows per page: 10 &nbsp;|&nbsp; Page 1</span>
+                <span>Rows per page: 10</span>
             </div>
         </div>
         """
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # Column picker
-        st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander("⚙ Column Picker — Show/Hide Columns"):
-            cp_cols = st.columns(4)
-            col_keys = list(st.session_state.show_cols.keys())
-            for i, col in enumerate(col_keys):
-                with cp_cols[i % 4]:
-                    st.session_state.show_cols[col] = st.checkbox(
-                        col,
-                        value=st.session_state.show_cols[col],
-                        key=f"col_{col}"
-                    )
+        # ── ABAC Debug Inspector ──
+        with st.expander("🛠 Governance Debug Inspector"):
+            tab1, tab2 = st.tabs(["Cortex Search Payload", "ABAC Audit Trace"])
+            with tab1:
+                st.caption("Spring Boot constructs this payload — the browser never sends it directly.")
+                st.json({
+                    "query": query_used,
+                    "columns": ["DOC_ID", "ATTACHMENT_ID", "TRACKING_ID", "FILE_NAME", "CHUNK_TEXT"],
+                    "filter": {
+                        "@and": [
+                            {"@eq": {"DOC_STATE": user_info["state"]}},
+                            {"@eq": {"BUSINESS_AREA": business_area or f"(entitled: {user_info['entitled_business_areas']})"}}
+                        ]
+                    },
+                    "limit": 10
+                })
+            with tab2:
+                st.json({
+                    "user": user_info["username"],
+                    "role": user_info["role"],
+                    "enforced_state": user_info["state"],
+                    "entitled_business_areas": user_info["entitled_business_areas"],
+                    "pii_unmasked": user_info["sees_unmasked_pii"],
+                    "download_allowed": user_info["can_download"],
+                    "documents_evaluated": len(MOCK_DOCUMENTS),
+                    "documents_matched": len(results),
+                    "documents_excluded_by_state_abac": len([d for d in MOCK_DOCUMENTS if d["STATE"] != user_info["state"]]),
+                })
 
-        # ABAC debug inspector
-        st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander("🛠 Governance Debug Inspector — ABAC Audit Log"):
-            st.markdown("**Cortex Search Payload (Spring Boot constructs this — browser never sees it)**")
-            st.json({
-                "query": query_used,
-                "columns": ["DOC_ID", "ATTACHMENT_ID", "TRACKING_ID", "FILE_NAME", "CHUNK_TEXT"],
-                "filter": {
-                    "@and": [
-                        {"@eq": {"DOC_STATE": user_info["state"]}},
-                        {"@eq": {"BUSINESS_AREA": business_area or f"[user entitled: {user_info['entitled_business_areas']}]"}}
-                    ]
-                },
-                "limit": 10
-            })
-            st.markdown("**ABAC Evaluation**")
-            st.json({
-                "user": user_info["username"],
-                "role": user_info["role"],
-                "enforced_state": user_info["state"],
-                "entitled_business_areas": user_info["entitled_business_areas"],
-                "pii_unmasked": user_info["sees_unmasked_pii"],
-                "download_allowed": user_info["can_download"],
-                "documents_evaluated": len(MOCK_DOCUMENTS),
-                "documents_matched": len(results),
-                "documents_excluded_by_abac": len(MOCK_DOCUMENTS) - len(results),
-            })
 
-if reset_clicked:
-    st.session_state.search_results = None
-    st.rerun()
+
