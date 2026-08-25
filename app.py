@@ -232,7 +232,6 @@ DOCUMENTS = [
     },
 ]
 
-# Simulated document lifecycle / versioning.
 VERSIONS = {
     "DOC-10001": [
         {"VERSION_ID": "DOC-10001-V1", "HASH": "sha256:aaa111", "IS_CURRENT": True}
@@ -287,46 +286,211 @@ html, body, [class*="css"] { font-family: 'Roboto', sans-serif !important; }
 #MainMenu, footer, header { visibility: hidden; }
 .block-container { padding-top: 0 !important; }
 
-.sdp-nav {
-    background:#3f51b5;color:white;padding:14px 28px;display:flex;
-    align-items:center;justify-content:space-between;margin-bottom:24px;
+/* TOP HEADER + LEGEND */
+
+.sdp-top-btn {
+    border: 1px solid #d0d4e4;
+    background: #ffffff;
+    color: #3f51b5;
+    font-size: 12px;
+    padding: 6px 12px;
+    border-radius: 4px;
+    margin-left: 8px;
+    cursor: pointer;
 }
-.sdp-nav-title {font-size:18px;font-weight:500;}
-.sdp-nav-persona {background:rgba(255,255,255,.18);padding:5px 12px;border-radius:4px;font-size:12px;}
+
+.sdp-legend {
+    background: #fafafa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 14px;
+    margin-bottom: 16px;
+    display: flex;
+    gap: 18px;
+    align-items: center;
+    font-size: 12px;
+    color: #555;
+}
+
+/* NAV BAR */
+
+.sdp-nav {
+    background:#3f51b5;
+    color:white;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
+}
+.sdp-nav-title {
+    font-size:18px;
+    font-weight:500;
+}
+.sdp-nav-persona {
+    background:rgba(255,255,255,.18);
+    padding:5px 12px;
+    border-radius:4px;
+    font-size:12px;
+}
+
+/* CARD HEADERS + BODY */
 
 .sdp-card-header {
-    background:white;border:1px solid #e0e0e0;border-bottom:none;
-    border-radius:8px 8px 0 0;padding:14px 20px;
+    background:#f5f7fb;
+    border:1px solid #e0e0e0;
+    border-bottom:none;
+    border-radius:6px 6px 0 0;
+    padding:10px 16px;
 }
-.sdp-card-header h2 {font-size:17px;font-weight:500;color:#3f51b5;margin:0;}
+.sdp-card-header h2 {
+    font-size:14px;
+    font-weight:600;
+    color:#333;
+    margin:0;
+}
+
 .sdp-card-body {
-    background:white;border:1px solid #e0e0e0;border-radius:0 0 8px 8px;
-    padding:20px;margin-bottom:24px;
+    background:#ffffff;
+    border:1px solid #e0e0e0;
+    border-radius:0 0 6px 6px;
+    padding:16px 16px 12px 16px;
+    margin-bottom:18px;
 }
-.sdp-label {font-size:12px;font-weight:500;color:#555;margin-bottom:3px;display:block;}
-.sdp-hint {font-size:11px;color:#999;font-style:italic;}
-.req {color:#f44336;font-weight:700;}
+
+/* FORM LABELS */
+
+.sdp-label {
+    font-size:11px;
+    font-weight:600;
+    color:#444;
+    margin-bottom:2px;
+    display:block;
+}
+
+.sdp-hint {
+    font-size:11px;
+    color:#999;
+    font-style:italic;
+}
+
+.req {
+    color:#f44336;
+    font-weight:700;
+}
+
 .smart-badge {
-    display:inline-flex;font-size:11px;color:#7c4dff;background:#ede7f6;
-    padding:2px 8px;border-radius:12px;font-weight:600;margin-left:6px;
+    display:inline-flex;
+    font-size:11px;
+    color:#7c4dff;
+    background:#ede7f6;
+    padding:2px 8px;
+    border-radius:12px;
+    font-weight:600;
+    margin-left:6px;
 }
-.sdp-chips {
-    background:#f9f9f9;border:1px solid #e0e0e0;border-radius:4px;
-    padding:10px 16px;display:flex;flex-wrap:wrap;gap:8px;margin-bottom:14px;
+
+/* INPUTS */
+
+.stTextInput, .stTextArea, .stSelectbox {
+    font-size:13px !important;
 }
-.sdp-chip {background:#e8eaf6;color:#3f51b5;padding:4px 12px;border-radius:16px;font-size:12px;}
-.sdp-table-wrap {background:white;border:1px solid #e0e0e0;border-radius:8px;overflow:hidden;}
-.sdp-table {width:100%;border-collapse:collapse;font-size:13px;}
-.sdp-table th {padding:11px 14px;text-align:left;font-weight:500;color:#555;background:#fafafa;border-bottom:2px solid #e0e0e0;}
-.sdp-table td {padding:11px 14px;border-bottom:1px solid #f0f0f0;vertical-align:top;}
-.sdp-table tr:last-child td {border-bottom:none;}
-.sdp-snippet {font-style:italic;color:#555;display:block;max-width:520px;}
-.sdp-snippet mark {background:#fff59d;padding:0 2px;border-radius:2px;font-style:normal;}
-.sdp-trk-link {color:#3f51b5;font-weight:500;}
-.badge-full {background:#e8f5e9;color:#2e7d32;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;}
-.badge-masked {background:#fff3e0;color:#e65100;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;}
-.badge-denied {background:#ffebee;color:#c62828;padding:3px 9px;border-radius:12px;font-size:11px;font-weight:600;}
-.security-note {background:#eef4ff;border-left:4px solid #3f51b5;padding:12px 16px;margin:12px 0;font-size:13px;}
+
+/* TABLE */
+
+.sdp-table-wrap {
+    background:white;
+    border:1px solid #e0e0e0;
+    border-radius:8px;
+    overflow:hidden;
+}
+
+.sdp-table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+}
+
+.sdp-table th {
+    padding:11px 14px;
+    text-align:left;
+    font-weight:500;
+    color:#555;
+    background:#fafafa;
+    border-bottom:2px solid #e0e0e0;
+}
+
+.sdp-table td {
+    padding:11px 14px;
+    border-bottom:1px solid #f0f0f0;
+    vertical-align:top;
+}
+
+.sdp-table tr:last-child td {
+    border-bottom:none;
+}
+
+.sdp-snippet {
+    font-style:italic;
+    color:#555;
+    display:block;
+    max-width:520px;
+}
+
+.sdp-snippet mark {
+    background:#fff59d;
+    padding:0 2px;
+    border-radius:2px;
+    font-style:normal;
+}
+
+/* BADGES */
+
+.badge-full {
+    background:#e8f5e9;
+    color:#2e7d32;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
+}
+
+.badge-masked {
+    background:#fff3e0;
+    color:#e65100;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
+}
+
+.badge-denied {
+    background:#ffebee;
+    color:#c62828;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
+}
+
+/* BUTTONS */
+
+div[data-testid="stButton"] > button {
+    font-size:13px !important;
+    padding:6px 14px !important;
+    border-radius:4px !important;
+}
+
+/* SECURITY NOTE */
+
+.security-note {
+    background:#eef4ff;
+    border-left:4px solid #3f51b5;
+    padding:12px 16px;
+    margin:12px 0;
+    font-size:13px;
+}
+
 </style>
 """, unsafe_allow_html=True)
 
@@ -467,7 +631,6 @@ def run_search(user, query, selected_ba, filters):
             "_source": d,
         }
 
-        # --- FIX: Add masked/unmasked display fields for detail panel ---
         investigator_display = (
             d["SBS"]["INVESTIGATOR"]
             if user["unmasked_pii"]
@@ -504,7 +667,6 @@ def run_search(user, query, selected_ba, filters):
 
 
 def download_document(user, doc):
-    # Confidential case types require regulator access
     CONFIDENTIAL_CASE_TYPES = {
         "Enforcement",
         "Market Conduct Exams",
@@ -556,6 +718,23 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+# Top bar + legend (client-style)
+st.markdown("""
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+  <div style="font-size:20px;font-weight:500;color:#333;">
+    Smart Document Search
+  </div>
+  <div>
+    <button class="sdp-top-btn">Global Search</button>
+    <button class="sdp-top-btn">Column Picker</button>
+  </div>
+</div>
+<div class="sdp-legend">
+  <span><span class="req">*</span>&nbsp; Required Field</span>
+  <span><span class="smart-badge">✦ Smart</span>&nbsp; AI-powered search</span>
+</div>
+""", unsafe_allow_html=True)
+
 c1, c2, c3 = st.columns([3, 3, 1])
 with c1:
     st.caption("Desktop prototype — S3 → Parse → Chunk → Governance → Search → UI")
@@ -593,10 +772,6 @@ The UI does not choose authorization, masking, State, or raw-document access. Sp
 st.markdown('<div class="sdp-card-header"><h2>Search Criteria</h2></div>', unsafe_allow_html=True)
 st.markdown('<div class="sdp-card-body">', unsafe_allow_html=True)
 
-st.markdown('<span class="sdp-label">State / Jurisdiction</span>', unsafe_allow_html=True)
-st.text_input("State", value=user["state"], disabled=True, label_visibility="collapsed")
-st.caption("State is injected by the backend from the authenticated user's entitlement. It is not user-editable.")
-
 st.markdown('<span class="sdp-label">Business Area <span class="req">*</span></span>', unsafe_allow_html=True)
 business_area = st.selectbox(
     "Business Area",
@@ -607,40 +782,79 @@ business_area = st.selectbox(
 st.markdown('<span class="sdp-label">Search Document Contents <span class="req">*</span> <span class="smart-badge">✦ Smart</span></span>', unsafe_allow_html=True)
 query = st.text_area(
     "Search Document Contents",
-    placeholder="Search parsed document content...",
+    placeholder="Search within the text of all attached documents...",
     height=90,
     label_visibility="collapsed",
 )
+st.markdown('<span class="sdp-hint">Search within the text of all attached documents.</span>', unsafe_allow_html=True)
 
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Case Details (expander, restyled via CSS)
 with st.expander("Case Details", expanded=True):
+    st.markdown('<div class="sdp-card-body">', unsafe_allow_html=True)
     a, b = st.columns(2)
     with a:
         case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Conduct Exams"])
     with b:
-        tracking_id = st.text_input("Tracking ID", placeholder="e.g. 12345")
+        tracking_id = st.text_input("Tracking ID", placeholder="e.g. 999")
     a, b = st.columns(2)
     with a:
-        investigator = st.text_input("Investigator", placeholder="Search investigator")
+        investigator = st.text_input("Investigator", placeholder="Search by Investigator name")
+        st.markdown('<span class="sdp-hint">Searches Primary and Secondary investigators.</span>', unsafe_allow_html=True)
     with b:
         status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with st.expander("Entity"):
-    entity = st.text_input("Entity Name", placeholder="Search person or company")
+# Entity
+with st.expander("Entity", expanded=False):
+    st.markdown('<div class="sdp-card-body">', unsafe_allow_html=True)
+    entity = st.text_input("Entity Name", placeholder="Search by person or company name")
+    st.markdown('<span class="sdp-hint">Handles partial names, company names, or combinations.</span>', unsafe_allow_html=True)
+    naic_group = st.text_input("NAIC Group Number", placeholder="e.g. 9083")
+    st.markdown('</div>', unsafe_allow_html=True)
 
-with st.expander("Document"):
-    a, b = st.columns(2)
-    with a:
-        document_type = st.selectbox("Document Type", ["", "Investigation Report", "Correspondence", "Complaint", "Assessment", "Examination Report"])
-    with b:
-        file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
+# Dates (placeholder, matching client sections)
+with st.expander("Dates", expanded=False):
+    st.markdown('<div class="sdp-card-body">', unsafe_allow_html=True)
+    d1, d2 = st.columns(2)
+    with d1:
+        start_date = st.date_input("Start Date", value=None)
+    with d2:
+        end_date = st.date_input("End Date", value=None)
+    st.markdown('</div>', unsafe_allow_html=True)
 
-st.markdown("</div>", unsafe_allow_html=True)
+# Document
+with st.expander("Document", expanded=False):
+    st.markdown('<div class="sdp-card-body">', unsafe_allow_html=True)
+    doc_name = st.text_input("Document Name", placeholder="e.g., accident report, policy letter")
+    st.markdown('<span class="sdp-hint">Smart search over document names.</span>', unsafe_allow_html=True)
+    file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
+    st.markdown('</div>', unsafe_allow_html=True)
+
+# Additional Details (optional filters)
+with st.expander("Additional Details", expanded=False):
+    st.markdown('<div class="sdp-card-body">', unsafe_allow_html=True)
+    ad1, ad2, ad3 = st.columns(3)
+    with ad1:
+        case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
+    with ad2:
+        state_keyword = st.text_input("State Keyword", placeholder="e.g., hazardous waste")
+    with ad3:
+        reason = st.text_input("Reason", placeholder="Reason or narrative keyword")
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # ==============================================================================
 # EXECUTE
 # ==============================================================================
 
-if st.button("🔍 Search", type="primary"):
+btn_cols = st.columns([1, 1, 6])
+with btn_cols[0]:
+    search_clicked = st.button("🔍 Search", type="primary")
+with btn_cols[1]:
+    reset_clicked = st.button("Reset")
+
+if search_clicked:
     if not query.strip() or len(query.strip()) < 3:
         st.error("Search Document Contents is required and must contain at least 3 characters.")
     else:
@@ -651,13 +865,13 @@ if st.button("🔍 Search", type="primary"):
             "entity": entity,
             "tracking_id": tracking_id,
             "file_type": file_type,
-            "document_type": document_type,
+            "document_type": None,
         }
 
         st.session_state.results = run_search(user, query, business_area, filters)
         st.session_state.payload = build_search_payload(user, query, business_area, filters)
 
-if st.button("Reset"):
+if reset_clicked:
     st.session_state.results = None
     st.session_state.payload = None
     st.rerun()
@@ -694,17 +908,14 @@ if st.session_state.results is not None:
                     else:
                         st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
 
-        with st.expander("Result Metadata"):
+        with st.expander("Result Metadata", expanded=False):
             m1, m2, m3 = st.columns(3)
-        
             m1.markdown(f"**Document Type**  \n{r['DOCUMENT_TYPE']}")
             m1.markdown(f"**Document Date**  \n{r['DOCUMENT_DATE']}")
             m1.markdown(f"**State**  \n{r['STATE']}")
-        
             m2.markdown(f"**Business Area**  \n{r['BUSINESS_AREA']}")
             m2.markdown(f"**Case Type**  \n{r['CASE_TYPE']}")
             m2.markdown(f"**Status**  \n{r['CASE_STATUS']}")
-        
             m3.markdown(f"**Investigator**  \n{r['INVESTIGATOR_DISPLAY']}")
             m3.markdown(f"**Entity**  \n{r['ENTITY_NAME_DISPLAY']}")
             m3.markdown(f"**LOI**  \n{r['LOI_DISPLAY']}")
