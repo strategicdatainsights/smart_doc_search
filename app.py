@@ -520,12 +520,34 @@ def run_search(user, query, selected_ba, filters):
 
 
 def download_document(user, doc):
+
+    # Confidential case types require regulator access
+    CONFIDENTIAL_CASE_TYPES = {
+        "Enforcement",
+        "Market Conduct Exams",
+        "Investigations",
+        "Multi-State",
+        "Securities",
+        "PBM",
+        "Fraud",
+    }
+    case_type = doc["SBS"]["CASE_TYPE"]
+
+    if user["role"] != "STATE_REGULATOR" and case_type in CONFIDENTIAL_CASE_TYPES:
+        return False, "Download denied: confidential case type requires regulator access."
+
+    # Persona-level entitlement
     if not user["can_download"]:
         return False, "Download denied by authorization policy."
+
+    # Jurisdiction gate
     if doc["STATE"] != user["state"]:
         return False, "Download denied: jurisdiction mismatch."
+
+    # Business-area gate
     if doc["BUSINESS_AREA"] not in user["business_areas"]:
         return False, "Download denied: business-area entitlement."
+
     return True, f"Authorized download: {doc['FILE_NAME']}"
 
 
