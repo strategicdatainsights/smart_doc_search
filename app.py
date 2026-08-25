@@ -10,63 +10,64 @@ st.set_page_config(
 )
 
 # ==============================================================================
-# MOCK SECURITY / GOVERNANCE CONFIGURATION
+# MOCK SECURITY / GOVERNANCE CONFIGURATION (South Dakota / Idaho)
 # ==============================================================================
 
 USERS = {
-    "Regulator — RI (Full Access)": {
-        "username": "e.rosso@regulator.ri.gov",
+    "Regulator — SD (Full Access)": {
+        "username": "reg.sd@state.sd.gov",
         "role": "STATE_REGULATOR",
-        "state": "RI",
-        "jurisdiction": "RI",
+        "state": "SD",
+        "jurisdiction": "SD",
         "business_areas": ["Market Regulation", "Complaints", "Exams"],
         "can_download": True,
         "unmasked_pii": True,
     },
-    "Analyst — RI (Exams Only, Masked)": {
-        "username": "j.smith@state.ri.gov",
+    "Analyst — SD (Exams Only, Masked)": {
+        "username": "analyst.sd@state.sd.gov",
         "role": "FINANCIAL_ANALYST",
-        "state": "RI",
-        "jurisdiction": "RI",
+        "state": "SD",
+        "jurisdiction": "SD",
         "business_areas": ["Exams"],
         "can_download": True,
         "unmasked_pii": False,
     },
-    "Analyst — MA (Exams Only, No Download)": {
-        "username": "d.jones@state.ma.gov",
+    "Analyst — ID (Exams Only, No Download)": {
+        "username": "analyst.id@state.id.gov",
         "role": "FINANCIAL_ANALYST",
-        "state": "MA",
-        "jurisdiction": "MA",
+        "state": "ID",
+        "jurisdiction": "ID",
         "business_areas": ["Exams"],
         "can_download": False,
         "unmasked_pii": False,
     },
 }
 
-# Document-pipeline data + simulated SBS data.
-# In production, document fields originate from S3/parse/chunk/extract and
-# structured case fields come from the replicated SBS EDL.
+# ==============================================================================
+# DOCUMENT-PIPELINE DATA + SIMULATED SBS DATA (SD / ID)
+# ==============================================================================
+
 DOCUMENTS = [
     {
         "DOC_ID": "DOC-10001",
         "VERSION_ID": "DOC-10001-V1",
         "ATTACHMENT_ID": "890786543",
         "TRACKING_ID": "12350",
-        "FILE_PATH": "RI/Market Regulation/890786543/court_doc.docx",
-        "FILE_NAME": "court_doc.docx",
-        "STATE": "RI",
+        "FILE_PATH": "SD/Market Regulation/890786543/accident_investigation_sd.docx",
+        "FILE_NAME": "accident_investigation_sd.docx",
+        "STATE": "SD",
         "BUSINESS_AREA": "Market Regulation",
-        "DOCUMENT_TITLE": "Accident Investigation Report",
+        "DOCUMENT_TITLE": "South Dakota Accident Investigation Report",
         "DOCUMENT_DATE": "2019-10-03",
         "DOCUMENT_TYPE": "Investigation Report",
         "CHUNK_TEXT": (
-            "Accident appears to have occurred on Monday evening at the "
-            "intersection of Main and Broad Street. Jane Smith reported the "
-            "incident to Apex Holdings LLC."
+            "Accident appears to have occurred on Monday evening near Sioux Falls "
+            "at the intersection of Main and 10th Street. Jane Smith reported the "
+            "incident to Prairie Plains Mutual Insurance Company."
         ),
         "PII": {
             "PERSON_NAME": "Jane Smith",
-            "COMPANY_NAME": "Apex Holdings LLC",
+            "COMPANY_NAME": "Prairie Plains Mutual Insurance Company",
         },
         "LOCKED": False,
         "UPLOAD_DATE": "2019-10-03",
@@ -74,7 +75,7 @@ DOCUMENTS = [
             "CASE_TYPE": "Complaints",
             "CASE_STATUS": "Open",
             "INVESTIGATOR": "A. Miller",
-            "ENTITY_NAME": "Apex Holdings LLC",
+            "ENTITY_NAME": "Prairie Plains Mutual Insurance Company",
             "CASE_INITIATED": "2019-09-28",
             "CASE_OPENED": "2019-10-01",
             "CASE_CLOSED": None,
@@ -89,20 +90,21 @@ DOCUMENTS = [
         "VERSION_ID": "DOC-10002-V1",
         "ATTACHMENT_ID": "890786544",
         "TRACKING_ID": "12351",
-        "FILE_PATH": "RI/Market Regulation/890786544/JaneDoe_2024301.pdf",
-        "FILE_NAME": "JaneDoe_2024301.pdf",
-        "STATE": "RI",
+        "FILE_PATH": "SD/Market Regulation/890786544/jane_doe_dispute_sd.pdf",
+        "FILE_NAME": "jane_doe_dispute_sd.pdf",
+        "STATE": "SD",
         "BUSINESS_AREA": "Market Regulation",
-        "DOCUMENT_TITLE": "Formal Dispute Correspondence",
+        "DOCUMENT_TITLE": "Formal Dispute Correspondence – SD",
         "DOCUMENT_DATE": "2019-12-22",
         "DOCUMENT_TYPE": "Correspondence",
         "CHUNK_TEXT": (
             "The claimant filed a formal dispute concerning the accident "
-            "that occurred on December 19th. Jane Doe contacted Beacon Mutual Insurance."
+            "that occurred on December 19th near Rapid City. Jane Doe contacted "
+            "Black Hills Mutual Insurance Company."
         ),
         "PII": {
             "PERSON_NAME": "Jane Doe",
-            "COMPANY_NAME": "Beacon Mutual Insurance",
+            "COMPANY_NAME": "Black Hills Mutual Insurance Company",
         },
         "LOCKED": True,
         "UPLOAD_DATE": "2019-12-22",
@@ -110,7 +112,7 @@ DOCUMENTS = [
             "CASE_TYPE": "Enforcement",
             "CASE_STATUS": "Closed",
             "INVESTIGATOR": "R. Vance",
-            "ENTITY_NAME": "Beacon Mutual Insurance",
+            "ENTITY_NAME": "Black Hills Mutual Insurance Company",
             "CASE_INITIATED": "2019-12-18",
             "CASE_OPENED": "2019-12-20",
             "CASE_CLOSED": "2020-01-15",
@@ -125,20 +127,20 @@ DOCUMENTS = [
         "VERSION_ID": "DOC-10003-V1",
         "ATTACHMENT_ID": "890786545",
         "TRACKING_ID": "12352",
-        "FILE_PATH": "RI/Complaints/890786545/uniformdoc.pdf",
-        "FILE_NAME": "uniformdoc.pdf",
-        "STATE": "RI",
+        "FILE_PATH": "SD/Complaints/890786545/uniformdoc_sd.pdf",
+        "FILE_NAME": "uniformdoc_sd.pdf",
+        "STATE": "SD",
         "BUSINESS_AREA": "Complaints",
-        "DOCUMENT_TITLE": "Claim Denial Complaint",
+        "DOCUMENT_TITLE": "Claim Denial Complaint – SD",
         "DOCUMENT_DATE": "2020-01-05",
         "DOCUMENT_TYPE": "Complaint",
         "CHUNK_TEXT": (
-            "The policyholder submitted a formal complaint regarding claim denial. "
-            "The complaint was assigned for review."
+            "The policyholder submitted a formal complaint regarding claim denial "
+            "for a vehicle loss near Pierre. The complaint was assigned for review."
         ),
         "PII": {
             "PERSON_NAME": "Robert Jones",
-            "COMPANY_NAME": "Progressive Insurance",
+            "COMPANY_NAME": "Dakota Plains Insurance Company",
         },
         "LOCKED": False,
         "UPLOAD_DATE": "2020-01-05",
@@ -146,7 +148,7 @@ DOCUMENTS = [
             "CASE_TYPE": "Complaints",
             "CASE_STATUS": "Open",
             "INVESTIGATOR": "A. Miller",
-            "ENTITY_NAME": "Progressive Insurance",
+            "ENTITY_NAME": "Dakota Plains Insurance Company",
             "CASE_INITIATED": "2020-01-03",
             "CASE_OPENED": "2020-01-05",
             "CASE_CLOSED": None,
@@ -161,20 +163,20 @@ DOCUMENTS = [
         "VERSION_ID": "DOC-10004-V1",
         "ATTACHMENT_ID": "890786546",
         "TRACKING_ID": "12345",
-        "FILE_PATH": "RI/Exams/890786546/AccidentDetail.pdf",
-        "FILE_NAME": "AccidentDetail.pdf",
-        "STATE": "RI",
+        "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
+        "FILE_NAME": "accident_detail_sd.pdf",
+        "STATE": "SD",
         "BUSINESS_AREA": "Exams",
-        "DOCUMENT_TITLE": "Vehicle Damage Assessment",
+        "DOCUMENT_TITLE": "Vehicle Damage Assessment – SD",
         "DOCUMENT_DATE": "2020-01-22",
         "DOCUMENT_TYPE": "Assessment",
         "CHUNK_TEXT": (
-            "Details of damage sustained by vehicle after accident. "
-            "Total loss assessment filed by adjuster."
+            "Details of damage sustained by vehicle after accident near Sioux Falls. "
+            "Total loss assessment filed by the adjuster."
         ),
         "PII": {
             "PERSON_NAME": "Michael Davis",
-            "COMPANY_NAME": "Bay State Life Underwriters",
+            "COMPANY_NAME": "Missouri River Life Underwriters",
         },
         "LOCKED": False,
         "UPLOAD_DATE": "2020-01-22",
@@ -182,7 +184,7 @@ DOCUMENTS = [
             "CASE_TYPE": "Market Conduct Exams",
             "CASE_STATUS": "Under Review",
             "INVESTIGATOR": "C. Davis",
-            "ENTITY_NAME": "Bay State Life Underwriters",
+            "ENTITY_NAME": "Missouri River Life Underwriters",
             "CASE_INITIATED": "2020-01-20",
             "CASE_OPENED": "2020-01-22",
             "CASE_CLOSED": None,
@@ -197,20 +199,20 @@ DOCUMENTS = [
         "VERSION_ID": "DOC-10005-V1",
         "ATTACHMENT_ID": "890786547",
         "TRACKING_ID": "12355",
-        "FILE_PATH": "MA/Exams/890786547/CornwallMotorcycleClub.docx",
-        "FILE_NAME": "CornwallMotorcycleClub.docx",
-        "STATE": "MA",
+        "FILE_PATH": "ID/Exams/890786547/cornwall_motorcycle_club_id.docx",
+        "FILE_NAME": "cornwall_motorcycle_club_id.docx",
+        "STATE": "ID",
         "BUSINESS_AREA": "Exams",
-        "DOCUMENT_TITLE": "Motorcycle Club Examination",
+        "DOCUMENT_TITLE": "Motorcycle Club Examination – ID",
         "DOCUMENT_DATE": "2020-02-10",
         "DOCUMENT_TYPE": "Examination Report",
         "CHUNK_TEXT": (
             "Details of accident damage assessment from third party inspector "
-            "retained by Cornwall Group LLC."
+            "retained by Snake River Group LLC near Boise, Idaho."
         ),
         "PII": {
             "PERSON_NAME": "Indiana Jones",
-            "COMPANY_NAME": "Cornwall Group LLC",
+            "COMPANY_NAME": "Snake River Group LLC",
         },
         "LOCKED": False,
         "UPLOAD_DATE": "2020-02-10",
@@ -218,7 +220,7 @@ DOCUMENTS = [
             "CASE_TYPE": "Market Conduct Exams",
             "CASE_STATUS": "Closed",
             "INVESTIGATOR": "C. Davis",
-            "ENTITY_NAME": "Cornwall Group LLC",
+            "ENTITY_NAME": "Snake River Group LLC",
             "CASE_INITIATED": "2020-02-08",
             "CASE_OPENED": "2020-02-10",
             "CASE_CLOSED": "2020-03-01",
@@ -253,7 +255,6 @@ VERSIONS = {
 # FIELD / PAYLOAD CONFIGURATION
 # ==============================================================================
 
-# Product-defined availability matrix. The browser never controls this.
 FIELD_MATRIX = {
     "Market Regulation": {
         "base": ["DOC_ID", "TRACKING_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE",
@@ -272,7 +273,6 @@ FIELD_MATRIX = {
     },
 }
 
-# Only backend code chooses these representations.
 PII_FIELDS = {"ENTITY_NAME", "INVESTIGATOR", "PERSON_NAME", "COMPANY_NAME"}
 
 # ==============================================================================
@@ -335,8 +335,6 @@ html, body, [class*="css"] { font-family: 'Roboto', sans-serif !important; }
 # ==============================================================================
 
 def mask_value(value):
-    """Prototype-only deterministic masking. Production should use approved
-    Snowflake governance / AI_REDACT strategy, not regex alone."""
     if not value:
         return value
 
@@ -349,7 +347,7 @@ def mask_value(value):
     words = value.split()
     masked = []
     for word in words:
-        if word.upper() in {"LLC", "INC", "INSURANCE", "LIFE", "UNDERWRITERS"}:
+        if word.upper() in {"LLC", "INC", "INSURANCE", "LIFE", "UNDERWRITERS", "COMPANY"}:
             masked.append(word)
         else:
             masked.append(word[:1] + "*" * max(len(word) - 1, 1))
@@ -357,14 +355,12 @@ def mask_value(value):
 
 
 def mask_text(text, doc):
-    """Use known simulated PII values so prototype masking is predictable."""
     if not text:
         return text
 
     for sensitive in doc.get("PII", {}).values():
         text = text.replace(sensitive, mask_value(sensitive))
 
-    # Additional generic vectors for the prototype.
     text = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "***-**-****", text)
     text = re.sub(r"\b[\w.+-]+@[\w.-]+\.\w+\b", "[EMAIL MASKED]", text)
     text = re.sub(r"\b(?:\d{3}[-.\s]){2}\d{4}\b", "[PHONE MASKED]", text)
@@ -372,7 +368,6 @@ def mask_text(text, doc):
 
 
 def authorized_documents(user, selected_ba):
-    """Spring Boot authorization boundary simulation."""
     return [
         d for d in DOCUMENTS
         if d["STATE"] == user["state"]
@@ -382,10 +377,8 @@ def authorized_documents(user, selected_ba):
 
 
 def build_search_payload(user, query, selected_ba, filters):
-    """Simulates the payload Spring Boot would construct for Cortex Search."""
     allowed = FIELD_MATRIX[selected_ba]["base"]
 
-    # Backend chooses full vs masked representation. UI cannot request it.
     if user["unmasked_pii"]:
         columns = allowed
     else:
@@ -417,8 +410,6 @@ def build_search_payload(user, query, selected_ba, filters):
 def run_search(user, query, selected_ba, filters):
     docs = authorized_documents(user, selected_ba)
 
-    # Structured SBS filtering happens before/around semantic retrieval in
-    # this mock. In production these values come from Snowflake SBS EDL joins.
     if filters["case_type"]:
         docs = [d for d in docs if d["SBS"]["CASE_TYPE"] == filters["case_type"]]
     if filters["status"]:
@@ -434,7 +425,6 @@ def run_search(user, query, selected_ba, filters):
     if filters["file_type"]:
         docs = [d for d in docs if d["FILE_NAME"].lower().endswith(filters["file_type"].lower())]
 
-    # Search against the representation permitted to this persona.
     results = []
     q = query.strip().lower()
 
@@ -478,24 +468,20 @@ def run_search(user, query, selected_ba, filters):
         }
 
         # --- FIX: Add masked/unmasked display fields for detail panel ---
-
-        # Investigator display
         investigator_display = (
             d["SBS"]["INVESTIGATOR"]
             if user["unmasked_pii"]
             else mask_value(d["SBS"]["INVESTIGATOR"])
         )
         result["INVESTIGATOR_DISPLAY"] = investigator_display
-        
-        # Entity display
+
         entity_display = (
             d["SBS"]["ENTITY_NAME"]
             if user["unmasked_pii"]
             else mask_value(d["SBS"]["ENTITY_NAME"])
         )
         result["ENTITY_NAME_DISPLAY"] = entity_display
-        
-        # LOI display (optional but safe)
+
         loi_display = (
             d["SBS"]["LOI"]
             if user["unmasked_pii"]
@@ -503,8 +489,6 @@ def run_search(user, query, selected_ba, filters):
         )
         result["LOI_DISPLAY"] = loi_display
 
-
-        # Safe highlighting is applied only to the representation returned.
         if q:
             for term in q.split():
                 result["SNIPPET"] = re.sub(
@@ -520,7 +504,6 @@ def run_search(user, query, selected_ba, filters):
 
 
 def download_document(user, doc):
-
     # Confidential case types require regulator access
     CONFIDENTIAL_CASE_TYPES = {
         "Enforcement",
@@ -536,20 +519,13 @@ def download_document(user, doc):
     if user["role"] != "STATE_REGULATOR" and case_type in CONFIDENTIAL_CASE_TYPES:
         return False, "Download denied: confidential case type requires regulator access."
 
-    # Persona-level entitlement
     if not user["can_download"]:
         return False, "Download denied by authorization policy."
-
-    # Jurisdiction gate
     if doc["STATE"] != user["state"]:
         return False, "Download denied: jurisdiction mismatch."
-
-    # Business-area gate
     if doc["BUSINESS_AREA"] not in user["business_areas"]:
         return False, "Download denied: business-area entitlement."
-
     return True, f"Authorized download: {doc['FILE_NAME']}"
-
 
 # ==============================================================================
 # SESSION
@@ -731,7 +707,7 @@ if st.session_state.results is not None:
         
             m3.markdown(f"**Investigator**  \n{r['INVESTIGATOR_DISPLAY']}")
             m3.markdown(f"**Entity**  \n{r['ENTITY_NAME_DISPLAY']}")
-            m3.markdown(f"**LOI**  \n{r['LOI']}")
+            m3.markdown(f"**LOI**  \n{r['LOI_DISPLAY']}")
 
 # ==============================================================================
 # GOVERNANCE / PAYLOAD INSPECTOR
@@ -766,7 +742,7 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
                 "DOC_ID": "DOC-10004",
                 "VERSION_ID": "DOC-10004-V1",
                 "ATTACHMENT_ID": "890786546",
-                "FILE_PATH": "RI/Exams/890786546/AccidentDetail.pdf",
+                "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
             },
             "relationship": {
                 "ATTACHMENT_ID": "→ SBS ATTACHMENT",
@@ -792,9 +768,9 @@ with st.expander("🧪 Security Test Scenarios", expanded=False):
     st.markdown("""
 Use the persona switcher and search to demonstrate:
 
-1. **RI regulator** — sees full permitted metadata and can download.
-2. **RI analyst** — sees masked PII and only Exams.
-3. **MA analyst** — sees only MA Exams and cannot download RI documents.
+1. **SD regulator** — sees full permitted metadata and can download.
+2. **SD analyst** — sees masked PII and only SD Exams.
+3. **ID analyst** — sees only ID Exams and cannot download SD documents.
 4. **State isolation** — backend always applies the authenticated State.
 5. **Business-area isolation** — backend rejects areas outside entitlement.
 6. **PII masking** — document content, entity, investigator, and filenames use the permitted representation.
