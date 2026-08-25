@@ -477,6 +477,33 @@ def run_search(user, query, selected_ba, filters):
             "_source": d,
         }
 
+        # --- FIX: Add masked/unmasked display fields for detail panel ---
+
+        # Investigator display
+        investigator_display = (
+            d["SBS"]["INVESTIGATOR"]
+            if user["unmasked_pii"]
+            else mask_value(d["SBS"]["INVESTIGATOR"])
+        )
+        result["INVESTIGATOR_DISPLAY"] = investigator_display
+        
+        # Entity display
+        entity_display = (
+            d["SBS"]["ENTITY_NAME"]
+            if user["unmasked_pii"]
+            else mask_value(d["SBS"]["ENTITY_NAME"])
+        )
+        result["ENTITY_NAME_DISPLAY"] = entity_display
+        
+        # LOI display (optional but safe)
+        loi_display = (
+            d["SBS"]["LOI"]
+            if user["unmasked_pii"]
+            else mask_value(d["SBS"]["LOI"])
+        )
+        result["LOI_DISPLAY"] = loi_display
+
+
         # Safe highlighting is applied only to the representation returned.
         if q:
             for term in q.split():
