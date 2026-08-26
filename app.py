@@ -1,4 +1,5 @@
 import streamlit as st
+import pandas as pd
 import re
 from html import escape
 
@@ -45,7 +46,6 @@ USERS = {
 
 # ==============================================================================
 # SNOWFLAKE-READY MOCK TABLES
-# DOC_SEARCH_CONTENT, SBS.ATTACHMENT, MR_CASE
 # ==============================================================================
 
 DOC_SEARCH_CONTENT = [
@@ -296,152 +296,98 @@ FIELD_MATRIX = {
 }
 
 # ==============================================================================
-# CSS (NEW ACCORDION STYLE)
+# CSS STYLING & ACCORDION SYSTEM
 # ==============================================================================
 
 st.markdown("""
 <style>
 html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
 #MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 0 !important; }
+.block-container { padding-top: 0 !important; max-width: 95% !important; }
 
 .sdp-nav {
-    background:#3f51b5;
-    color:white;
-    padding:10px 20px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:18px;
+    background: #3f51b5;
+    color: white;
+    padding: 12px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 24px;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
-.sdp-nav-title { font-size:18px;font-weight:500; }
+.sdp-nav-title { font-size: 20px; font-weight: 600; letter-spacing: 0.3px; }
 .sdp-nav-persona {
-    background:rgba(255,255,255,.18);
-    padding:5px 12px;
-    border-radius:4px;
-    font-size:12px;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 13px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 .badge-full {
-    background:#e8f5e9;
-    color:#2e7d32;
-    padding:3px 9px;
-    border-radius:12px;
-    font-size:11px;
-    font-weight:600;
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
 .badge-masked {
-    background:#fff3e0;
-    color:#e65100;
-    padding:3px 9px;
-    border-radius:12px;
-    font-size:11px;
-    font-weight:600;
+    background: #fff3e0;
+    color: #e65100;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
 .badge-denied {
-    background:#ffebee;
-    color:#c62828;
-    padding:3px 9px;
-    border-radius:12px;
-    font-size:11px;
-    font-weight:600;
+    background: #ffebee;
+    color: #c62828;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
-.sdp-snippet {
-    font-style:italic;
-    color:#555;
-    display:inline;
+.badge-locked {
+    background: #ede7f6;
+    color: #512da8;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
-.sdp-snippet mark {
-    background:#fff59d;
-    padding:0 2px;
-    border-radius:2px;
-    font-style:normal;
+
+.result-card {
+    background: #ffffff;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 16px;
+    margin-bottom: 12px;
 }
-.accordion {
-    border:1px solid #ddd;
-    border-radius:6px;
-    margin-bottom:12px;
-    background:#fafafa;
+.meta-section { margin-bottom: 12px; }
+.meta-section h4 { margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #333; }
+.meta-row { font-size: 13px; margin-bottom: 4px; color: #444; }
+.meta-label { font-weight: 600; color: #222; }
+
+mark {
+    background: #fff59d;
+    padding: 0 2px;
+    border-radius: 2px;
 }
-.accordion-header {
-    padding:10px 14px;
-    cursor:pointer;
-    font-weight:600;
-    background:#f0f0f0;
-    border-radius:6px;
-    user-select:none;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-}
-.accordion-header:hover { background:#e6e6e6; }
-.accordion-header-left { display:flex; flex-direction:column; gap:4px; }
-.accordion-header-main { font-weight:600; }
-.accordion-header-sub { font-size:12px; color:#444; }
-.accordion-header-right { margin-left:12px; }
-.accordion-content {
-    padding:12px 14px;
-    display:none;
-    border-top:1px solid #ddd;
-    background:#ffffff;
-}
-.meta-section { margin-bottom:10px; }
-.meta-section h4 { margin:0 0 6px 0; font-size:13px; font-weight:600; }
-.meta-row { font-size:12px; margin-bottom:2px; }
-.meta-label { font-weight:600; }
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# BACKEND SIMULATION (MASKING, AUTHORIZATION, SEARCH)
+# BACKEND SIMULATION & MASKING
 # ==============================================================================
 
-def accordion_result_card(r, user):
-    doc_id = r["DOC_ID"]
-    title = escape(r["DOCUMENT_TITLE"])
-    snippet = r["SNIPPET"]
-    ba = r["BUSINESS_AREA"]
-    state = r["STATE"]
-    dtype = r["DOCUMENT_TYPE"]
-    date = r["DOCUMENT_DATE"]
-    investigator = r["INVESTIGATOR_DISPLAY"]
-    entity = r["ENTITY_NAME_DISPLAY"]
-
-    acc_id = f"single_acc_{doc_id}"
-
-    return f"""
-<div class="accordion">
-<div class="accordion-header" onclick="
-var c = document.getElementById('{acc_id}');
-c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-">
-<div class="accordion-header-left">
-<div class="accordion-header-main">{title}</div>
-<div class="accordion-header-sub">
-DOC_ID: {doc_id} · {dtype} · {date} · {ba} · {state}
-</div>
-</div>
-</div>
-
-<div class="accordion-content" id="{acc_id}">
-<div class="meta-section">
-<div class="meta-row"><span class="meta-label">Title:</span> {title}</div>
-<div class="meta-row"><span class="meta-label">Type:</span> {dtype}</div>
-<div class="meta-row"><span class="meta-label">Upload Date:</span> {date}</div>
-<div class="meta-row"><span class="meta-label">Business Area:</span> {ba}</div>
-<div class="meta-row"><span class="meta-label">State:</span> {state}</div>
-<div class="meta-row"><span class="meta-label">Investigator:</span> {investigator}</div>
-<div class="meta-row"><span class="meta-label">Entity:</span> {entity}</div>
-</div>
-
-<div class="meta-section">
-<h4>Snippet</h4>
-<div class="meta-row">{snippet}</div>
-</div>
-</div>
-</div>
-"""
-
-
+def get_download_url(user, doc):
+    """Generates an authorized backend download URL or returns None if restricted."""
+    if not user["can_download"] or doc.get("LOCKED", False):
+        return None
+    return f"https://your-api-gateway.state.gov/api/v1/download/{doc['DOC_ID']}"
 
 def mask_value(value):
     if not value:
@@ -462,18 +408,11 @@ def mask_value(value):
 def mask_text(text, entity_name=None):
     if not text:
         return text
-
     if entity_name:
         text = re.sub(re.escape(entity_name), mask_value(entity_name), text)
-
-    # Mask emails
     text = re.sub(r"\b[\w.+-]+@[\w.-]+\.\w+\b", "[EMAIL MASKED]", text)
-
-    # Mask SSNs
     text = re.sub(r"\b(?:\d{3}-\d{2}-\d{4})\b", "***-**-****", text)
-
     return text
-
 
 def authorized_documents(user, selected_ba):
     return [
@@ -534,7 +473,7 @@ def run_search(user, query, selected_ba, filters):
             if not all(term in haystack for term in terms):
                 continue
 
-        # Apply filters
+        # Filters
         if filters.get("case_type") and case["CASE_TYPE"] != filters["case_type"]:
             continue
         if filters.get("status") and case["CASE_STATUS"] != filters["status"]:
@@ -571,7 +510,7 @@ def run_search(user, query, selected_ba, filters):
             display_investigator = mask_value(case["INVESTIGATOR"])
             snippet = mask_text(d["CONTENT_TEXT"], entity_name=case["ENTITY_NAME"])
 
-        # Highlight terms
+        # Highlighting
         if q:
             for term in q.split():
                 snippet = re.sub(
@@ -605,8 +544,9 @@ def run_search(user, query, selected_ba, filters):
         })
 
     return results
+
 # ==============================================================================
-# MAIN APPLICATION & USER INTERFACE
+# MAIN APPLICATION & INITIALIZATION
 # ==============================================================================
 
 if "selected_user_key" not in st.session_state:
@@ -616,7 +556,7 @@ if "search_results" not in st.session_state:
 if "current_payload" not in st.session_state:
     st.session_state.current_payload = None
 
-# Sidebar Governance Persona Selector
+# Sidebar Context Control
 st.sidebar.title("Security Governance")
 selected_user_key = st.sidebar.selectbox(
     "Active Persona",
@@ -636,13 +576,13 @@ st.sidebar.markdown(f"**Download Permission:** {current_user['can_download']}")
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
 download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
 
-# Top Navigation Bar
+# Header Navigation
 st.markdown(
     f"""
     <div class="sdp-nav">
         <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
         <div class="sdp-nav-persona">
-            {current_user['username']} · {current_user['role']} · {current_user['state']} · {pii_badge} · {download_badge}
+            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']}</span> · {pii_badge} {download_badge}
         </div>
     </div>
     """,
@@ -651,8 +591,8 @@ st.markdown(
 
 st.title("Document Search & Governance Engine")
 
-# Search UI — Business Area + Query
-top_row1, top_row2 = st.columns([2, 2])
+# Search Filters Section
+top_row1, top_row2 = st.columns([1, 2])
 with top_row1:
     selected_ba = st.selectbox(
         "Business Area",
@@ -665,7 +605,6 @@ with top_row2:
         placeholder="Enter keywords (e.g., accident, Sioux Falls, dispute)...",
     )
 
-# Advanced Filters
 with st.expander("Advanced Metadata Filters", expanded=True):
     f_col1, f_col2, f_col3 = st.columns(3)
     with f_col1:
@@ -691,34 +630,12 @@ filters = {
     "loi": f_loi or None,
 }
 
-# Execute Search
 if st.button("Execute Search", type="primary"):
     st.session_state.search_results = run_search(current_user, search_query, selected_ba, filters)
     st.session_state.current_payload = build_search_payload(current_user, search_query, selected_ba, filters)
 
-# Cortex Payload Viewer
-if st.session_state.current_payload:
-    with st.expander("🔍 View Generated Cortex Search Payload (JSON)"):
-        st.json(st.session_state.current_payload)
-
-import pandas as pd
-
 # ==============================================================================
-# MISSING AUTHORIZATION FUNCTION
-# ==============================================================================
-
-def get_download_url(user, doc):
-    """Generates an authorized backend download URL or access denial link."""
-    if not user["can_download"]:
-        return "javascript:alert('Access Denied: Download permission restricted.');"
-    if doc.get("LOCKED", False):
-        return "javascript:alert('Access Restricted: Document locked for audit.');"
-    
-    # Return your backend API endpoint URL passing the DOC_ID / FILE_PATH
-    return f"https://your-api-gateway.state.gov/api/v1/download/{doc['DOC_ID']}"
-
-# ==============================================================================
-# SEARCH RESULTS — IN-TABLE DOWNLOAD LINKS
+# SEARCH RESULTS RENDERING
 # ==============================================================================
 
 if st.session_state.search_results is not None:
@@ -727,11 +644,19 @@ if st.session_state.search_results is not None:
 
     if not results:
         st.info("No documents match your search criteria or entitlement boundary.")
-
     else:
-        # Build Dataframe with a dedicated URL column for downloads
-        df_data = [
-            {
+        # 1. Summary Data Table
+        df_data = []
+        for r in results:
+            url = get_download_url(current_user, r["_doc"])
+            if r["_doc"].get("LOCKED", False):
+                status = "🔒 Locked"
+            elif not current_user["can_download"]:
+                status = "🚫 Restricted"
+            else:
+                status = "✅ Allowed"
+
+            df_data.append({
                 "DOC_ID": r["DOC_ID"],
                 "Title": r["DOCUMENT_TITLE"],
                 "Type": r["DOCUMENT_TYPE"],
@@ -740,37 +665,83 @@ if st.session_state.search_results is not None:
                 "State": r["STATE"],
                 "Investigator": r["INVESTIGATOR_DISPLAY"],
                 "Entity": r["ENTITY_NAME_DISPLAY"],
-                "Download Link": get_download_url(current_user, r["_doc"]),
-            }
-            for r in results
-        ]
+                "Access Status": status,
+                "Download Link": url,
+            })
 
         df = pd.DataFrame(df_data)
 
-        # Render dataframe using column configuration for clickable download buttons
         st.dataframe(
             df,
             column_config={
+                "Access Status": st.column_config.TextColumn(
+                    "Access",
+                    help="Authorization and audit lock state",
+                    width="small",
+                ),
                 "Download Link": st.column_config.LinkColumn(
                     "Action",
-                    help="Download raw document file",
+                    help="Authorized direct document download",
                     validate="^https://",
-                    display_text=r"Download (.*)", # Displays "Download DOC-XXXXX" in cell
-                )
+                    display_text="Download File",
+                ),
             },
             use_container_width=True,
             hide_index=True,
         )
-        
+
+        st.markdown("<br>", unsafe_allow_html=True)
+
+        # 2. Detailed Document Accordion List
+        for r in results:
+            doc_id = r["DOC_ID"]
+            title = r["DOCUMENT_TITLE"]
+            dtype = r["DOCUMENT_TYPE"]
+            date = r["DOCUMENT_DATE"]
+            ba = r["BUSINESS_AREA"]
+            state = r["STATE"]
+            
+            if r["LOCKED"]:
+                acc_badge = '<span class="badge-locked">LOCKED</span>'
+            elif not current_user["can_download"]:
+                acc_badge = '<span class="badge-denied">NO DOWNLOAD</span>'
+            else:
+                acc_badge = '<span class="badge-full">ACCESSIBLE</span>'
+
+            header_label = f"{title}  |  {doc_id} · {dtype} · {date} · {ba} · {state}"
+            
+            with st.expander(header_label, expanded=False):
+                col_info, col_snip = st.columns([1, 1])
+                with col_info:
+                    st.markdown(
+                        f"""
+                        <div class="meta-section">
+                            <div class="meta-row"><span class="meta-label">Title:</span> {escape(title)}</div>
+                            <div class="meta-row"><span class="meta-label">Type:</span> {escape(dtype)}</div>
+                            <div class="meta-row"><span class="meta-label">Upload Date:</span> {escape(date)}</div>
+                            <div class="meta-row"><span class="meta-label">Business Area:</span> {escape(ba)}</div>
+                            <div class="meta-row"><span class="meta-label">State:</span> {escape(state)}</div>
+                            <div class="meta-row"><span class="meta-label">Investigator:</span> {escape(r['INVESTIGATOR_DISPLAY'])}</div>
+                            <div class="meta-row"><span class="meta-label">Entity:</span> {escape(r['ENTITY_NAME_DISPLAY'])}</div>
+                            <div class="meta-row"><span class="meta-label">Status:</span> {acc_badge}</div>
+                        </div>
+                        """,
+                        unsafe_allow_html=True
+                    )
+                with col_snip:
+                    st.markdown("**Snippet Context**")
+                    st.markdown(
+                        f"""<div style="background:#f9f9f9; padding:12px; border-radius:4px; border-left:3px solid #3f51b5; font-style:italic;">{r['SNIPPET']}</div>""",
+                        unsafe_allow_html=True
+                    )
+
 # ==============================================================================
-# 🛠 Governance / Integration Inspector
+# TECHNICAL & GOVERNANCE INSPECTOR PANELS
 # ==============================================================================
 
 with st.expander("🛠 Governance / Integration Inspector", expanded=False):
-
     col_g1, col_g2, col_g3 = st.columns(3)
 
-    # Backend Payload
     with col_g1:
         st.markdown("### Backend Payload")
         if st.session_state.current_payload:
@@ -778,7 +749,6 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
         else:
             st.info("Run a search to view the generated payload.")
 
-    # Authorization Trace
     with col_g2:
         st.markdown("### Authorization Trace")
         st.json({
@@ -793,7 +763,6 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
             "cortex_search_is_authorization_boundary": False,
         })
 
-    # Document Relationship
     with col_g3:
         st.markdown("### Document Relationship")
         st.json({
@@ -817,10 +786,6 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
             },
         })
 
-# ==============================================================================
-# 🧪 Security Test Scenarios
-# ==============================================================================
-
 with st.expander("🧪 Security Test Scenarios", expanded=False):
     st.markdown("""
 ### Persona-Based Security Demonstrations
@@ -834,10 +799,6 @@ with st.expander("🧪 Security Test Scenarios", expanded=False):
 7. **Raw Access Control** — download independently authorized  
 8. **Payload Control** — backend selects fields, UI cannot override
 """)
-
-# ==============================================================================
-# 📐 Architecture / Data Flow
-# ==============================================================================
 
 with st.expander("📐 Architecture / Data Flow", expanded=False):
     st.markdown("""
@@ -855,8 +816,4 @@ with st.expander("📐 Architecture / Data Flow", expanded=False):
 - **UI** — displays permitted representation only
 """)
 
-# ==============================================================================
-# END OF FILE
-# ==============================================================================
-
-st.markdown("<br><br><center><small>Smart Document Platform — Prototype Build</small></center>", unsafe_allow_html=True)
+st.markdown("<br><hr><center><small>Smart Document Platform — Prototype Build</small></center>", unsafe_allow_html=True)
