@@ -700,9 +700,6 @@ if st.button("Execute Search", type="primary"):
 if st.session_state.current_payload:
     with st.expander("🔍 View Generated Cortex Search Payload (JSON)"):
         st.json(st.session_state.current_payload)
-import pandas as pd
-
-import pandas as pd
 
 # ==============================================================================
 # SEARCH RESULTS — TABLE VIEW WITH DOWNLOAD LINKS
@@ -729,7 +726,7 @@ if st.session_state.search_results is not None:
                 "Entity": r["ENTITY_NAME_DISPLAY"],
                 "Summary": r["_doc"].get("SUMMARY", ""),
                 "Snippet": r["SNIPPET"],
-                "Download": f"[Download](#{r['DOC_ID']})",   # clickable link
+                "Download": f"➡️ [Download {r['DOC_ID']}](#{r['DOC_ID']})",
             }
             for r in results
         ])
@@ -741,12 +738,14 @@ if st.session_state.search_results is not None:
         st.subheader("Download Documents")
 
         for idx, r in enumerate(results):
+            st.markdown(f"### <a name='{r['DOC_ID']}'></a>", unsafe_allow_html=True)
             if st.button(f"Download {r['DOC_ID']}", key=f"dl_{idx}"):
                 allowed, msg = download_document(current_user, r["_doc"], r["_case"])
                 if allowed:
                     st.success(msg)
                 else:
                     st.error(msg)
+
 
 
 # ==============================================================================
