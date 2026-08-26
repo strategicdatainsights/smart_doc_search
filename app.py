@@ -632,6 +632,10 @@ html, body, [class*="css"] {
 # BACKEND SIMULATION (SNOWFLAKE-READY)
 # ==============================================================================
 
+# ==============================================================================
+# BACKEND SIMULATION (SNOWFLAKE-READY)
+# ==============================================================================
+
 def mask_value(value):
     if not value:
         return value
@@ -723,12 +727,10 @@ def run_search(user, query, selected_ba, filters):
             if not all(term in haystack for term in terms):
                 continue
 
-        if filters.get("case_type"):
-            if case["CASE_TYPE"] != filters["case_type"]:
-                continue
-        if filters.get("status"):
-            if case["CASE_STATUS"] != filters["status"]:
-                continue
+        if filters.get("case_type") and case["CASE_TYPE"] != filters["case_type"]:
+            continue
+        if filters.get("status") and case["CASE_STATUS"] != filters["status"]:
+            continue
         if filters.get("investigator"):
             inv_q = filters["investigator"].lower()
             if inv_q not in case["INVESTIGATOR"].lower() and (
@@ -740,18 +742,14 @@ def run_search(user, query, selected_ba, filters):
             ent_q = filters["entity"].lower()
             if ent_q not in case["ENTITY_NAME"].lower():
                 continue
-        if filters.get("tracking_id"):
-            if attachment["TRACKING_ID"] != filters["tracking_id"]:
-                continue
-        if filters.get("naic_group"):
-            if case["NAIC_GROUP_NUMBER"] != filters["naic_group"]:
-                continue
-        if filters.get("case_subtype"):
-            if case["CASE_SUBTYPE"] != filters["case_subtype"]:
-                continue
-        if filters.get("loi"):
-            if case["LOI"] != filters["loi"]:
-                continue
+        if filters.get("tracking_id") and attachment["TRACKING_ID"] != filters["tracking_id"]:
+            continue
+        if filters.get("naic_group") and case["NAIC_GROUP_NUMBER"] != filters["naic_group"]:
+            continue
+        if filters.get("case_subtype") and case["CASE_SUBTYPE"] != filters["case_subtype"]:
+            continue
+        if filters.get("loi") and case["LOI"] != filters["loi"]:
+            continue
 
         if user["unmasked_pii"]:
             display_file_name = attachment["FILE_NAME"]
@@ -822,6 +820,27 @@ def download_document(user, doc_row, case_row):
     return True, f"Authorized download: {doc_row['DOC_ID']} / {doc_row['FILE_PATH']}"
 
 # ==============================================================================
+# ACCORDION HELPER (NEW)
+# ==============================================================================
+
+def accordion_section(title, rows, key):
+    content_id = f"acc_content_{key}"
+    html_rows = "".join([f"<p><strong>{k}:</strong> {v}</p>" for k, v in rows.items()])
+    st.markdown(f"""
+    <div class="accordion">
+        <div class="accordion-header" onclick="
+            var c = document.getElementById('{content_id}');
+            c.style.display = (c.style.display == 'block' ? 'none' : 'block');
+        ">
+            {title}
+        </div>
+        <div class="accordion-content" id="{content_id}">
+            {html_rows}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+# ==============================================================================
 # SESSION
 # ==============================================================================
 
@@ -850,128 +869,34 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-c1, c2 = st.columns([4, 2])
-with c1:
-    st.caption("Prototype: S3 → DOC_SEARCH_CONTENT → Spring Boot auth → Cortex Search → SBS join → UI")
-with c2:
-    selected = st.selectbox("Persona", list(USERS), index=list(USERS).index(st.session_state.selected_user))
-    if selected != st.session_state.selected_user:
-        st.session_state.selected_user = selected
-        st.session_state.results = None
-        st.session_state.payload = None
-        st.rerun()
-
-with st.expander("Architecture / Data Flow", expanded=False):
-    st.markdown("""
-**Flow**
-
-`S3 → DOC_SEARCH_CONTENT (document-owned fields) → Spring Boot authorization → Cortex Search → SBS.ATTACHMENT / MR_CASE join → UI`
-
-**Ownership**
-
-- DOC_SEARCH_CONTENT: document text + document-derived metadata  
-- SBS.ATTACHMENT: file name, tracking ID, upload metadata  
-- MR_CASE: case metadata (type, status, investigator, entity, LOI, etc.)
-
-**Authorization**
-
-Spring Boot is the authorization boundary. Cortex Search is not.
-""")
-
 # ==============================================================================
-# SEARCH UI
-# ==============================================================================
-
-st.markdown("### Search Criteria")
-
-business_area = st.selectbox(
-    "Business Area",
-    user["business_areas"],
-)
-
-query = st.text_area(
-    "Search Document Contents (semantic)",
-    placeholder="Search within document text, titles, case notes, investigators, entities...",
-    height=100,
-)
-
-with st.expander("Case Filters", expanded=True):
-    c1, c2 = st.columns(2)
-    with c1:
-        case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
-        status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
-        case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
-        loi = st.text_input("Line of Insurance (LOI)", placeholder="e.g., Auto, Property, Life")
-    with c2:
-        tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12350")
-        investigator = st.text_input("Investigator", placeholder="Primary or secondary investigator")
-        entity = st.text_input("Entity Name", placeholder="Insurer or company name")
-        naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
-
-with st.expander("Document Filters", expanded=False):
-    d1, d2 = st.columns(2)
-    with d1:
-        doc_name = st.text_input("Document Title / Name", placeholder="e.g., Accident Investigation Report")
-        file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
-    with d2:
-        topics = st.text_input("Topics / Key Phrases", placeholder="e.g., accident, casualty, exam")
-        geo = st.text_input("Location Keyword", placeholder="e.g., Sioux Falls, Boise")
-
-btn_cols = st.columns([1, 1, 6])
-with btn_cols[0]:
-    search_clicked = st.button("🔍 Search", type="primary")
-with btn_cols[1]:
-    reset_clicked = st.button("Reset")
-
-if search_clicked:
-    if not query.strip() or len(query.strip()) < 3:
-        st.error("Search Document Contents is required and must contain at least 3 characters.")
-    else:
-        filters = {
-            "case_type": case_type or None,
-            "status": status or None,
-            "investigator": investigator or None,
-            "entity": entity or None,
-            "tracking_id": tracking_id or None,
-            "naic_group": naic_group or None,
-            "case_subtype": case_subtype or None,
-            "loi": loi or None,
-            "doc_name": doc_name or None,
-            "file_type": file_type or None,
-            "topics": topics or None,
-            "geo": geo or None,
-        }
-        st.session_state.results = run_search(user, query, business_area, filters)
-        st.session_state.payload = build_search_payload(user, query, business_area, filters)
-
-if reset_clicked:
-    st.session_state.results = None
-    st.session_state.payload = None
-    st.rerun()
-
-# ==============================================================================
-# RESULTS
+# RESULTS (WITH ACCORDIONS)
 # ==============================================================================
 
 if st.session_state.results is not None:
     results = st.session_state.results
     st.markdown(f"### Search Results `{len(results)}`")
+
     if not results:
         st.info("No documents match the search and authorization criteria.")
     else:
         for r in results:
             with st.container(border=True):
+
+                # Document summary row
                 cols = st.columns([1.3, 1.1, 2.0, 3.5, 1.2])
                 cols[0].markdown(f"**DOC_ID**  \n{r['DOC_ID']}")
                 cols[1].markdown(f"**Tracking ID**  \n{r['TRACKING_ID']}")
                 cols[2].markdown(f"**Document**  \n{r['DOCUMENT_TITLE']}")
                 cols[3].markdown(
-                    f"**Content**  \n<span class='sdp-snippet'>“{r['SNIPPET']}”</span>",
+                    f"**Content**  \n<span class='sdp-snippet'>\"{r['SNIPPET']}\"</span>",
                     unsafe_allow_html=True,
                 )
+
+                # Download button
                 with cols[4]:
                     if r["CAN_DOWNLOAD"]:
-                        if st.button("⬇ Download", key=f"dl_{r['DOC_ID']}"):
+                        if st.button("Download", key=f"dl_{r['DOC_ID']}"):
                             ok, msg = download_document(user, r["_doc"], r["_case"])
                             if ok:
                                 st.success(msg)
@@ -980,63 +905,41 @@ if st.session_state.results is not None:
                     else:
                         st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
 
-        with st.expander("Result Metadata", expanded=False):
-            m1, m2, m3 = st.columns(3)
-            m1.markdown(f"**Document Type**  \n{results[0]['DOCUMENT_TYPE']}")
-            m1.markdown(f"**Document Date**  \n{results[0]['DOCUMENT_DATE']}")
-            m1.markdown(f"**State**  \n{results[0]['STATE']}")
-            m2.markdown(f"**Business Area**  \n{results[0]['BUSINESS_AREA']}")
-            m2.markdown(f"**Case Type**  \n{results[0]['CASE_TYPE']}")
-            m2.markdown(f"**Status**  \n{results[0]['CASE_STATUS']}")
-            m3.markdown(f"**Investigator**  \n{results[0]['INVESTIGATOR_DISPLAY']}")
-            m3.markdown(f"**Entity**  \n{results[0]['ENTITY_NAME_DISPLAY']}")
-            m3.markdown(f"**LOI**  \n{results[0]['LOI_DISPLAY']}")
+                # Accordion: Document Metadata
+                accordion_section(
+                    "Document Metadata",
+                    {
+                        "DOC_ID": r["DOC_ID"],
+                        "Document Title": r["DOCUMENT_TITLE"],
+                        "Document Type": r["DOCUMENT_TYPE"],
+                        "Document Date": r["DOCUMENT_DATE"],
+                        "State": r["STATE"],
+                        "Business Area": r["BUSINESS_AREA"],
+                        "Locked": r["LOCKED"],
+                    },
+                    key=f"docmeta_{r['DOC_ID']}"
+                )
 
-# ==============================================================================
-# GOVERNANCE / INTEGRATION INSPECTOR
-# ==============================================================================
+                # Accordion: Attachment Metadata
+                accordion_section(
+                    "Attachment Metadata",
+                    {
+                        "Attachment ID": r["ATTACHMENT_ID"],
+                        "Tracking ID": r["TRACKING_ID"],
+                        "File Name": r["FILE_NAME"],
+                    },
+                    key=f"attach_{r['DOC_ID']}"
+                )
 
-with st.expander("🛠 Governance / Integration Inspector", expanded=False):
-    tab1, tab2, tab3 = st.tabs(["Backend Payload", "Authorization Trace", "Document Relationship"])
-
-    with tab1:
-        st.caption("Payload Spring Boot constructs for Cortex Search. UI does not choose authorization fields.")
-        if st.session_state.payload:
-            st.json(st.session_state.payload)
-        else:
-            st.info("Run a search to view the generated payload.")
-
-    with tab2:
-        st.json({
-            "authenticated_user": user["username"],
-            "role": user["role"],
-            "jurisdiction": user["jurisdiction"],
-            "enforced_state": user["state"],
-            "entitled_business_areas": user["business_areas"],
-            "pii_representation": "FULL" if user["unmasked_pii"] else "MASKED",
-            "raw_download": user["can_download"],
-            "authorization_boundary": "Spring Boot",
-            "cortex_search_is_authorization_boundary": False,
-        })
-
-    with tab3:
-        st.json({
-            "document": {
-                "DOC_ID": "DOC-10004",
-                "ATTACHMENT_ID": "890786546",
-                "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
-            },
-            "relationship": {
-                "ATTACHMENT_ID": "→ SBS.ATTACHMENT.ATTACHMENT_ID",
-                "TRACKING_ID": "→ MR_CASE.TRACKING_ID",
-                "structured_case_metadata": "→ SBS case tables",
-            },
-            "search_content": {
-                "CONTENT_TEXT": "→ parsed document text",
-            },
-            "governance": {
-                "DOC_STATE": "→ entitlement / jurisdiction",
-                "BUSINESS_AREA": "→ entitlement",
-                "PII": "→ full or search-safe representation via SBS join",
-            },
-        })
+                # Accordion: Case Metadata
+                accordion_section(
+                    "Case Metadata",
+                    {
+                        "Case Type": r["CASE_TYPE"],
+                        "Case Status": r["CASE_STATUS"],
+                        "Investigator": r["INVESTIGATOR_DISPLAY"],
+                        "Entity": r["ENTITY_NAME_DISPLAY"],
+                        "Line of Insurance": r["LOI_DISPLAY"],
+                    },
+                    key=f"case_{r['DOC_ID']}"
+                )
