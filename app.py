@@ -556,17 +556,40 @@ if "current_payload" not in st.session_state:
 
 # Sidebar Context Control
 st.sidebar.title("Security Governance")
+
+# Active Persona Selector
 selected_user_key = st.sidebar.selectbox(
     "Active Persona",
     options=list(USERS.keys()),
     index=list(USERS.keys()).index(st.session_state.selected_user_key),
 )
 st.session_state.selected_user_key = selected_user_key
-current_user = USERS[selected_user_key]
+base_user = USERS[selected_user_key]
+
+# Dynamic Role & State Dropdowns
+available_roles = sorted(list({u["role"] for u in USERS.values()}))
+available_states = sorted(list({u["state"] for u in USERS.values()}))
+
+selected_role = st.sidebar.selectbox(
+    "User Role",
+    options=available_roles,
+    index=available_roles.index(base_user["role"]) if base_user["role"] in available_roles else 0,
+)
+
+selected_state = st.sidebar.selectbox(
+    "State Jurisdiction",
+    options=available_states,
+    index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
+)
+
+# Overridden User Object for Dynamic Governance Context
+current_user = {
+    **base_user,
+    "role": selected_role,
+    "state": selected_state,
+}
 
 st.sidebar.markdown("---")
-st.sidebar.markdown(f"**Role:** `{current_user['role']}`")
-st.sidebar.markdown(f"**State Jurisdiction:** `{current_user['state']}`")
 st.sidebar.markdown(f"**Allowed Areas:** {', '.join(current_user['business_areas'])}")
 st.sidebar.markdown(f"**PII Access:** {'Unmasked' if current_user['unmasked_pii'] else 'Masked'}")
 st.sidebar.markdown(f"**Download Permission:** {current_user['can_download']}")
