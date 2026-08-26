@@ -370,8 +370,13 @@ html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSyst
     text-decoration:underline;
     cursor:pointer;
 }
-.actions-link {
-    color:#616161;
+.actions-btn {
+    display:inline-block;
+    padding:3px 8px;
+    border-radius:12px;
+    font-size:11px;
+    background:#e3f2fd;
+    color:#1e88e5;
     cursor:pointer;
 }
 </style>
@@ -660,7 +665,7 @@ with top_right:
         st.rerun()
 
 # ==============================================================================
-# SEARCH UI (Single expanded criteria section)
+# SEARCH UI — Wireframe-aligned, sections collapsed by default
 # ==============================================================================
 
 st.markdown("### Search Criteria")
@@ -679,73 +684,64 @@ with st.form(key="search_form"):
     )
     st.caption("Search within the text of all attached documents.")
 
-    # Case Details
-    st.markdown("#### Case Details")
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown("**Case Type**")
-        case_type = st.selectbox("", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
-        st.markdown("**Tracking ID**")
-        tracking_id = st.text_input("", placeholder="e.g., 12345")
-    with c2:
-        st.markdown("**Investigator**")
-        investigator = st.text_input("", placeholder="Search by investigator name")
-        st.caption("Searches Primary and Secondary investigators.")
-        st.markdown("**Status**")
-        status = st.selectbox("", ["", "Open", "Closed", "Under Review", "Pending"])
+    # Case Details (collapsed by default)
+    with st.expander("Case Details", expanded=False):
+        c1, c2 = st.columns(2)
+        with c1:
+            case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
+            tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12345")
+        with c2:
+            investigator = st.text_input("Investigator", placeholder="Search by investigator name")
+            st.caption("Searches Primary and Secondary investigators.")
+            status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
 
-    # Entity
-    st.markdown("#### Entity")
-    entity = st.text_input("Entity Name", placeholder="John Doe")
-    naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
+    # Entity (collapsed)
+    with st.expander("Entity", expanded=False):
+        entity = st.text_input("Entity Name", placeholder="John Doe")
+        naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
 
-    # Dates
-    st.markdown("#### Dates")
-    dc1, dc2 = st.columns(2)
-    with dc1:
-        case_initiated_from = st.date_input("Case Initiated From", value=None)
-        case_initiated_to = st.date_input("Case Initiated To", value=None)
-        case_opened_from = st.date_input("Case Opened From", value=None)
-        case_opened_to = st.date_input("Case Opened To", value=None)
-    with dc2:
-        case_closed_from = st.date_input("Case Closed From", value=None)
-        case_closed_to = st.date_input("Case Closed To", value=None)
-        file_upload_from = st.date_input("File Upload From", value=None)
-        file_upload_to = st.date_input("File Upload To", value=None)
+    # Dates (collapsed)
+    with st.expander("Dates", expanded=False):
+        dc1, dc2 = st.columns(2)
+        with dc1:
+            case_initiated_from = st.date_input("Case Initiated From", value=None)
+            case_initiated_to = st.date_input("Case Initiated To", value=None)
+            case_opened_from = st.date_input("Case Opened From", value=None)
+            case_opened_to = st.date_input("Case Opened To", value=None)
+        with dc2:
+            case_closed_from = st.date_input("Case Closed From", value=None)
+            case_closed_to = st.date_input("Case Closed To", value=None)
+            file_upload_from = st.date_input("File Upload From", value=None)
+            file_upload_to = st.date_input("File Upload To", value=None)
 
-    # Document
-    st.markdown("#### Document")
-    d1, d2 = st.columns(2)
-    with d1:
-        st.markdown("Document Name")
-        doc_name = st.text_input("", placeholder="e.g., accident report, policy letter")
-        st.markdown("File Type")
-        file_type = st.selectbox("", ["", ".pdf", ".docx"])
-    with d2:
-        st.markdown("Case Sub-Type")
-        case_subtype = st.text_input("", placeholder="e.g., Inquiry, Market Conduct")
+    # Document (collapsed)
+    with st.expander("Document", expanded=False):
+        d1, d2 = st.columns(2)
+        with d1:
+            doc_name = st.text_input("Document Name", placeholder="e.g., accident report, policy letter")
+            file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
+        with d2:
+            case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
 
-    # Additional Details
-    st.markdown("#### Additional Details")
-    ad1, ad2 = st.columns(2)
-    with ad1:
-        state_keywords = st.multiselect(
-            "State Keyword",
-            ["COVID-19", "Data Breach", "Fires Summer 2023", "Hurricane", "Pet Insurance", "Tornado"],
-        )
-    with ad2:
-        reason = st.selectbox("Reason", ["", "Accident", "Complaint", "Exam", "Dispute"])
+    # Additional Details (collapsed)
+    with st.expander("Additional Details", expanded=False):
+        ad1, ad2 = st.columns(2)
+        with ad1:
+            state_keywords = st.multiselect(
+                "State Keyword",
+                ["COVID-19", "Data Breach", "Fires Summer 2023", "Hurricane", "Pet Insurance", "Tornado"],
+            )
+        with ad2:
+            reason = st.selectbox("Reason", ["", "Accident", "Complaint", "Exam", "Dispute"])
 
-    # Coverage / LOI
-    st.markdown("#### Coverage & LOI")
-    lo1, lo2 = st.columns(2)
-    with lo1:
-        st.markdown("Line of Insurance")
-        loi = st.text_input("", placeholder="e.g., property, casualty, auto")
-        st.caption("Searches Coverage Type, Line of Insurance, Line of Business, and RIRS Line of Business.")
-    with lo2:
-        st.markdown("Disposition")
-        disposition = st.text_input("", placeholder="e.g., settled, dismissed")
+    # Coverage & LOI (collapsed)
+    with st.expander("Coverage & LOI", expanded=False):
+        lo1, lo2 = st.columns(2)
+        with lo1:
+            loi = st.text_input("Line of Insurance", placeholder="e.g., property, casualty, auto")
+            st.caption("Searches Coverage Type, Line of Insurance, Line of Business, and RIRS Line of Business.")
+        with lo2:
+            disposition = st.text_input("Disposition", placeholder="e.g., settled, dismissed")
 
     btn1, btn2 = st.columns([1, 1])
     with btn1:
@@ -759,10 +755,10 @@ if reset_clicked:
     st.rerun()
 
 date_filters = {
-    "case_initiated": (case_initiated_from, case_initiated_to) if case_initiated_from and case_initiated_to else None,
-    "case_opened": (case_opened_from, case_opened_to) if case_opened_from and case_opened_to else None,
-    "case_closed": (case_closed_from, case_closed_to) if case_closed_from and case_closed_to else None,
-    "file_upload": (file_upload_from, file_upload_to) if file_upload_from and file_upload_to else None,
+    "case_initiated": (case_initiated_from, case_initiated_to) if "case_initiated_from" in locals() and case_initiated_from and case_initiated_to else None,
+    "case_opened": (case_opened_from, case_opened_to) if "case_opened_from" in locals() and case_opened_from and case_opened_to else None,
+    "case_closed": (case_closed_from, case_closed_to) if "case_closed_from" in locals() and case_closed_from and case_closed_to else None,
+    "file_upload": (file_upload_from, file_upload_to) if "file_upload_from" in locals() and file_upload_from and file_upload_to else None,
 }
 
 if search_clicked:
@@ -829,7 +825,7 @@ if st.session_state.results is not None:
         st.markdown(chips_html, unsafe_allow_html=True)
 
 # ==============================================================================
-# RESULTS TABLE (Wireframe-accurate)
+# RESULTS TABLE — Download ONLY in table
 # ==============================================================================
 
 if st.session_state.results is not None:
@@ -845,7 +841,6 @@ if st.session_state.results is not None:
         with btn_row[1]:
             st.button("⚙ Column Picker")
 
-        # Fixed table columns per wireframe
         table_html = """
 <table class='results-table'>
 <thead>
@@ -870,12 +865,11 @@ if st.session_state.results is not None:
             table_html += f"<td>{escape(r['UPLOAD_DATE'])}</td>"
             table_html += f"<td>{escape(r['UPLOADED_BY_RESOLVED'])}</td>"
 
-            # Actions: more_vert menu icon, anchored to real download button below
+            # Actions: Download pseudo-button only in table
             table_html += "<td>"
             if r["CAN_DOWNLOAD"]:
                 table_html += (
-                    f"<a href='#dl_{r['DOC_ID']}' class='actions-link' "
-                    "title='More actions (Download, View)'>more_vert</a>"
+                    f"<span class='actions-btn' title='Download document'>Download</span>"
                 )
             else:
                 table_html += "<span class='badge-denied'>RESTRICTED</span>"
@@ -885,24 +879,6 @@ if st.session_state.results is not None:
 
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
-
-        # Real actions section with actual download buttons
-        st.markdown("#### Actions")
-        for r in results:
-            st.markdown(f"<a name='dl_{r['DOC_ID']}'></a>", unsafe_allow_html=True)
-            cols = st.columns([3, 1])
-            with cols[0]:
-                st.caption(f"{r['DOC_ID']} · {r['FILE_NAME']}")
-            with cols[1]:
-                if r["CAN_DOWNLOAD"]:
-                    if st.button("⬇ Download", key=f"dl_btn_{r['DOC_ID']}"):
-                        ok, msg = download_document(user, r["_doc"], r["_case"])
-                        if ok:
-                            st.success(msg)
-                        else:
-                            st.error(msg)
-                else:
-                    st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
 
 # ==============================================================================
 # GOVERNANCE / INSPECTOR (Technical Mode only)
