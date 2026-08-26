@@ -82,32 +82,6 @@ st.markdown(
 # ==============================================================================
 # MOCK DATASETS & FIELD MATRIX
 # ==============================================================================
-USERS = {
-    "reg_sd_user": {
-        "username": "reg_sd_user@state.gov",
-        "role": "STATE_REGULATOR",
-        "state": "SD",
-        "jurisdiction": "South Dakota Division of Insurance",
-        "business_areas": ["Market Regulation", "Company Licensing"],
-        "unmasked_pii": False,
-        "can_download": True,
-    },
-    "reg_id_user": {
-        "username": "reg_id_user@state.gov",
-        "role": "STATE_REGULATOR",
-        "state": "ID",
-        "jurisdiction": "Idaho Department of Insurance",
-        "business_areas": ["Market Regulation"],
-        "unmasked_pii": False,
-        "can_download": True,
-    },
-}
-
-STATE_JURISDICTIONS = {
-    "SD": ["South Dakota Division of Insurance", "South Dakota Risk & Licensing Board"],
-    "ID": ["Idaho Department of Insurance", "Idaho Regulatory Oversight"],
-}
-
 FIELD_MATRIX = {
     "Market Regulation": {
         "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
@@ -213,7 +187,6 @@ def authorized_documents(user, selected_ba):
         d for d in DOC_SEARCH_CONTENT
         if d["DOC_STATE"] == user["state"]
         and d["BUSINESS_AREA"] == selected_ba
-        and selected_ba in user["business_areas"]
         and d["IS_CURRENT"]
     ]
 
@@ -231,8 +204,8 @@ def build_search_payload(user, query, selected_ba, filters):
         "columns": allowed,
         "filter": cortex_filter,
         "limit": 10,
-        "authorization_boundary": "Spring Boot",
-        "raw_document_access": "backend controlled",
+        "authorization_boundary": "Spring Boot Integration Layer",
+        "raw_document_access": "Backend Auth Enforcement",
     }
 
 def run_search(user, query, selected_ba, filters):
@@ -342,60 +315,49 @@ def run_search(user, query, selected_ba, filters):
 # MAIN APPLICATION & INITIALIZATION
 # ==============================================================================
 
-if "selected_user_key" not in st.session_state:
-    st.session_state.selected_user_key = list(USERS.keys())[0]
 if "search_results" not in st.session_state:
     st.session_state.search_results = None
 if "current_payload" not in st.session_state:
     st.session_state.current_payload = None
 
-# Context Controls: State FIRST, then Jurisdiction based on State
-c_persona, c_state, c_jur = st.columns([1, 1, 1])
-
-with c_persona:
-    selected_user_key = st.selectbox(
-        "Active Persona",
-        options=list(USERS.keys()),
-        index=list(USERS.keys()).index(st.session_state.selected_user_key),
-    )
-    st.session_state.selected_user_key = selected_user_key
-    base_user = USERS[selected_user_key]
-
-available_states = sorted(list({u["state"] for u in USERS.values()}))
+# Context Controls: STATE then ROLE (REGULATOR vs ANALYST)
+c_state, c_role, c_pii, c_download = st.columns([1, 1, 1, 1])
 
 with c_state:
-    selected_state = st.selectbox(
-        "State",
-        options=available_states,
-        index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
-    )
+    selected_state = st.selectbox("State", options=["SD", "ID"], index=0)
 
-# Filter Jurisdiction choices by the selected State
-valid_jurisdictions = STATE_JURISDICTIONS.get(selected_state, ["Default Department of Insurance"])
+with c_role:
+    selected_role = st.selectbox("Role", options=["REGULATOR", "ANALYST"], index=0)
 
-with c_jur:
-    selected_jurisdiction = st.selectbox(
-        "Jurisdiction",
-        options=valid_jurisdictions,
-    )
+# Role defaults & override toggles
+default_can_download = True if selected_role == "REGULATOR" else False
+default_unmasked = False
 
-# Active User Context with State & Jurisdiction Overrides
+with c_pii:
+    unmasked_pii = st.checkbox("Unmask PII", value=default_unmasked)
+
+with c_download:
+    can_download = st.checkbox("Enable Download", value=default_can_download)
+
 current_user = {
-    **base_user,
+    "username": f"user_{selected_state.lower()}@{selected_state.lower()}.gov",
+    "role": selected_role,
     "state": selected_state,
-    "jurisdiction": selected_jurisdiction,
+    "unmasked_pii": unmasked_pii,
+    "can_download": can_download,
+    "business_areas": ["Market Regulation", "Company Licensing", "Fraud Investigation"],
 }
 
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
 download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
 
-# Header Navigation
+# Header Navigation Bar
 st.markdown(
     f"""
     <div class="sdp-nav">
         <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
         <div class="sdp-nav-persona">
-            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']} ({current_user['jurisdiction']})</span> · {pii_badge} {download_badge}
+            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']}</span> · {pii_badge} {download_badge}
         </div>
     </div>
     """,
@@ -460,7 +422,6 @@ if st.session_state.search_results is not None:
         # 1. Summary Data Table
         df_data = []
         for r in results:
-            # Download link is strictly disabled/None if user cannot download
             if current_user["can_download"]:
                 url = get_download_url(current_user, r["_doc"])
                 status = "✅ Allowed"
@@ -545,7 +506,27 @@ if st.session_state.search_results is not None:
                         unsafe_allow_html=True
                     )
 
-        # 3. Backend Search Payload Inspector
-        st.markdown("<br>", unsafe_allow_html=True)
-        with st.expander("🔍 View Backend Search Payload (Governance & Cortex AI Debug)", expanded=False):
-            st.json(st.session_state.current_payload)
+# ==============================================================================
+# SYSTEM ARCHITECTURE & GOVERNANCE ACCORDIONS
+# ==============================================================================
+st.markdown("<br>", unsafe_allow_html=True)
+
+with st.expander("🛠 Governance / Integration Inspector", expanded=False):
+    if st.session_state.current_payload:
+        st.json(st.session_state.current_payload)
+    else:
+        st.info("Execute a search to view backend payload filters and Snowflake Cortex parameters.")
+
+with st.expander("🧪 Security Test Scenarios", expanded=False):
+    st.markdown("""
+    - **State Isolation**: Switch state to verify cross-jurisdiction boundaries.
+    - **Role Privileges**: Switch between **REGULATOR** (Download Allowed) and **ANALYST** (Download Denied).
+    - **PII Enforcement**: Toggle **Unmask PII** to verify inline regex masking of SSN, Email, and Company Entities.
+    """)
+
+with st.expander("📐 Architecture / Data Flow", expanded=False):
+    st.markdown("""
+    1. **UI & Entitlement Boundary**: Streamlit captures role, state, and business area context.
+    2. **Middle Tier Authorization**: Enforces role restrictions before generating direct S3/Gateway URLs.
+    3. **Snowflake Cortex Engine**: Queries vectorized document data filtered strictly by `DOC_STATE` and `BUSINESS_AREA`.
+    """)
