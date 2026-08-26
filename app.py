@@ -80,13 +80,14 @@ st.markdown(
 )
 
 # ==============================================================================
-# MOCK DATASETS & FIELD MATRIX (50 RECORD GENERATOR)
+# MOCK DATASETS & FIELD MATRIX
 # ==============================================================================
 USERS = {
     "reg_sd_user": {
         "username": "reg_sd_user@state.gov",
         "role": "STATE_REGULATOR",
         "state": "SD",
+        "jurisdiction": "South Dakota Division of Insurance",
         "business_areas": ["Market Regulation", "Company Licensing"],
         "unmasked_pii": False,
         "can_download": True,
@@ -95,26 +96,16 @@ USERS = {
         "username": "reg_id_user@state.gov",
         "role": "STATE_REGULATOR",
         "state": "ID",
+        "jurisdiction": "Idaho Department of Insurance",
         "business_areas": ["Market Regulation"],
         "unmasked_pii": False,
         "can_download": True,
     },
-    "fraud_investigator": {
-        "username": "investigator@state.gov",
-        "role": "INVESTIGATOR",
-        "state": "SD",
-        "business_areas": ["Fraud Investigation", "Market Regulation"],
-        "unmasked_pii": True,
-        "can_download": True,
-    },
-    "analyst_no_download": {
-        "username": "analyst@state.gov",
-        "role": "ANALYST",
-        "state": "SD",
-        "business_areas": ["Market Regulation"],
-        "unmasked_pii": False,
-        "can_download": False,
-    },
+}
+
+STATE_JURISDICTIONS = {
+    "SD": ["South Dakota Division of Insurance", "South Dakota Risk & Licensing Board"],
+    "ID": ["Idaho Department of Insurance", "Idaho Regulatory Oversight"],
 }
 
 FIELD_MATRIX = {
@@ -190,7 +181,6 @@ for i in range(1, 51):
 # ==============================================================================
 
 def get_download_url(user, doc):
-    """Generates an authorized backend download URL for the document record."""
     return f"https://your-api-gateway.state.gov/api/v1/download/{doc['DOC_ID']}"
 
 def mask_value(value):
@@ -359,8 +349,9 @@ if "search_results" not in st.session_state:
 if "current_payload" not in st.session_state:
     st.session_state.current_payload = None
 
-# Context Controls (Persona & State Jurisdiction)
-c_persona, c_state = st.columns([1, 1])
+# Context Controls: State FIRST, then Jurisdiction based on State
+c_persona, c_state, c_jur = st.columns([1, 1, 1])
+
 with c_persona:
     selected_user_key = st.selectbox(
         "Active Persona",
@@ -374,15 +365,25 @@ available_states = sorted(list({u["state"] for u in USERS.values()}))
 
 with c_state:
     selected_state = st.selectbox(
-        "State Jurisdiction",
+        "State",
         options=available_states,
         index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
     )
 
-# Active User Context with Dynamic State Override
+# Filter Jurisdiction choices by the selected State
+valid_jurisdictions = STATE_JURISDICTIONS.get(selected_state, ["Default Department of Insurance"])
+
+with c_jur:
+    selected_jurisdiction = st.selectbox(
+        "Jurisdiction",
+        options=valid_jurisdictions,
+    )
+
+# Active User Context with State & Jurisdiction Overrides
 current_user = {
     **base_user,
     "state": selected_state,
+    "jurisdiction": selected_jurisdiction,
 }
 
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
@@ -394,7 +395,7 @@ st.markdown(
     <div class="sdp-nav">
         <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
         <div class="sdp-nav-persona">
-            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']}</span> · {pii_badge} {download_badge}
+            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']} ({current_user['jurisdiction']})</span> · {pii_badge} {download_badge}
         </div>
     </div>
     """,
@@ -459,13 +460,13 @@ if st.session_state.search_results is not None:
         # 1. Summary Data Table
         df_data = []
         for r in results:
-            url = get_download_url(current_user, r["_doc"])
-            
-            # Binary entitlement status matching wireframe
-            if not current_user["can_download"]:
-                status = "🚫 Restricted"
-            else:
+            # Download link is strictly disabled/None if user cannot download
+            if current_user["can_download"]:
+                url = get_download_url(current_user, r["_doc"])
                 status = "✅ Allowed"
+            else:
+                url = None
+                status = "🚫 Restricted"
 
             df_data.append({
                 "DOC_ID": r["DOC_ID"],
@@ -492,7 +493,7 @@ if st.session_state.search_results is not None:
                 ),
                 "Download Link": st.column_config.LinkColumn(
                     "Action",
-                    help="Authorized direct document download",
+                    help="Authorized direct document download link",
                     validate="^https://",
                     display_text="Download File",
                 ),
