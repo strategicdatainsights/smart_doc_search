@@ -370,6 +370,10 @@ html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSyst
     text-decoration:underline;
     cursor:pointer;
 }
+.actions-link {
+    color:#616161;
+    cursor:pointer;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -470,7 +474,6 @@ def run_search(user, query, selected_ba, filters, date_filters):
         if not case:
             continue
 
-        # Basic date filtering (string dates, simple comparison)
         def within_range(field_name, drange):
             if not drange or not drange[0] or not drange[1]:
                 return True
@@ -624,15 +627,6 @@ if "results" not in st.session_state:
     st.session_state.results = None
 if "payload" not in st.session_state:
     st.session_state.payload = None
-if "visible_columns" not in st.session_state:
-    st.session_state.visible_columns = [
-        "ATTACHMENT_ID",
-        "TRACKING_ID",
-        "FILE_NAME",
-        "SNIPPET",
-        "UPLOAD_DATE",
-        "UPLOADED_BY_RESOLVED",
-    ]
 
 user = USERS[st.session_state.selected_user]
 
@@ -654,7 +648,8 @@ st.markdown(f"""
 
 top_left, top_right = st.columns([4, 3])
 with top_left:
-    st.caption("Prototype: DOC_SEARCH_CONTENT → Spring Boot auth → Cortex Search → SBS join → UI")
+    st.markdown("## Smart Document Search")
+    st.caption("AI-powered semantic + structured search across all attached documents.")
 with top_right:
     selected = st.selectbox("Persona", list(USERS), index=list(USERS).index(st.session_state.selected_user))
     mode = st.radio("Mode", ["Client Demo", "Technical Review"], horizontal=True)
@@ -665,70 +660,97 @@ with top_right:
         st.rerun()
 
 # ==============================================================================
-# SEARCH UI
+# SEARCH UI (Single expanded criteria section)
 # ==============================================================================
 
 st.markdown("### Search Criteria")
 
-business_area = st.selectbox(
-    "Business Area",
-    user["business_areas"],
-)
-
 with st.form(key="search_form"):
+    # Business Area (required)
+    st.markdown("**Business Area** *")
+    business_area = st.selectbox("", user["business_areas"])
+
+    # Search Document Contents (required)
+    st.markdown("**Search Document Contents** *")
     query = st.text_area(
-        "Search Document Contents (semantic)",
-        placeholder="Search within document text, titles, case notes, investigators, entities...",
+        "",
+        placeholder="Enter search terms to find within document text...",
         height=100,
     )
+    st.caption("Search within the text of all attached documents.")
 
-    with st.expander("Case Filters", expanded=True):
-        c1, c2 = st.columns(2)
-        with c1:
-            case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
-            status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
-            case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
-            loi = st.text_input("Line of Insurance (LOI)", placeholder="e.g., Auto, Property, Life")
-        with c2:
-            tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12350")
-            investigator = st.text_input("Investigator", placeholder="Primary or secondary investigator")
-            entity = st.text_input("Entity Name", placeholder="Insurer or company name")
-            naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
+    # Case Details
+    st.markdown("#### Case Details")
+    c1, c2 = st.columns(2)
+    with c1:
+        st.markdown("**Case Type**")
+        case_type = st.selectbox("", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
+        st.markdown("**Tracking ID**")
+        tracking_id = st.text_input("", placeholder="e.g., 12345")
+    with c2:
+        st.markdown("**Investigator**")
+        investigator = st.text_input("", placeholder="Search by investigator name")
+        st.caption("Searches Primary and Secondary investigators.")
+        st.markdown("**Status**")
+        status = st.selectbox("", ["", "Open", "Closed", "Under Review", "Pending"])
 
-    with st.expander("Document Filters", expanded=False):
-        d1, d2 = st.columns(2)
-        with d1:
-            doc_name = st.text_input("Document Title / Name", placeholder="e.g., Accident Investigation Report")
-            file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
-            attachment_type = st.selectbox("Attachment Type", ["", "Report", "Letter", "Complaint", "Exam Report"])
-        with d2:
-            topics = st.text_input("Topics / Key Phrases", placeholder="e.g., accident, casualty, exam")
-            geo = st.text_input("Location Keyword", placeholder="e.g., Sioux Falls, Boise")
+    # Entity
+    st.markdown("#### Entity")
+    entity = st.text_input("Entity Name", placeholder="John Doe")
+    naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
 
-    with st.expander("Dates", expanded=False):
-        dc1, dc2 = st.columns(2)
-        with dc1:
-            case_initiated_from = st.date_input("Case Initiated From", value=None)
-            case_initiated_to = st.date_input("Case Initiated To", value=None)
-            case_opened_from = st.date_input("Case Opened From", value=None)
-            case_opened_to = st.date_input("Case Opened To", value=None)
-        with dc2:
-            case_closed_from = st.date_input("Case Closed From", value=None)
-            case_closed_to = st.date_input("Case Closed To", value=None)
-            file_upload_from = st.date_input("File Upload From", value=None)
-            file_upload_to = st.date_input("File Upload To", value=None)
+    # Dates
+    st.markdown("#### Dates")
+    dc1, dc2 = st.columns(2)
+    with dc1:
+        case_initiated_from = st.date_input("Case Initiated From", value=None)
+        case_initiated_to = st.date_input("Case Initiated To", value=None)
+        case_opened_from = st.date_input("Case Opened From", value=None)
+        case_opened_to = st.date_input("Case Opened To", value=None)
+    with dc2:
+        case_closed_from = st.date_input("Case Closed From", value=None)
+        case_closed_to = st.date_input("Case Closed To", value=None)
+        file_upload_from = st.date_input("File Upload From", value=None)
+        file_upload_to = st.date_input("File Upload To", value=None)
 
-    with st.expander("Additional Details", expanded=False):
-        ad1, ad2 = st.columns(2)
-        with ad1:
-            state_keywords = st.multiselect("State Keyword", ["Sioux Falls", "Rapid City", "Pierre", "Boise"])
-        with ad2:
-            reason = st.selectbox("Reason", ["", "Accident", "Complaint", "Exam", "Dispute"])
+    # Document
+    st.markdown("#### Document")
+    d1, d2 = st.columns(2)
+    with d1:
+        st.markdown("Document Name")
+        doc_name = st.text_input("", placeholder="e.g., accident report, policy letter")
+        st.markdown("File Type")
+        file_type = st.selectbox("", ["", ".pdf", ".docx"])
+    with d2:
+        st.markdown("Case Sub-Type")
+        case_subtype = st.text_input("", placeholder="e.g., Inquiry, Market Conduct")
 
-    btn_cols = st.columns([1, 1, 6])
-    with btn_cols[0]:
-        search_clicked = st.form_submit_button("🔍 Search", type="primary")
-    with btn_cols[1]:
+    # Additional Details
+    st.markdown("#### Additional Details")
+    ad1, ad2 = st.columns(2)
+    with ad1:
+        state_keywords = st.multiselect(
+            "State Keyword",
+            ["COVID-19", "Data Breach", "Fires Summer 2023", "Hurricane", "Pet Insurance", "Tornado"],
+        )
+    with ad2:
+        reason = st.selectbox("Reason", ["", "Accident", "Complaint", "Exam", "Dispute"])
+
+    # Coverage / LOI
+    st.markdown("#### Coverage & LOI")
+    lo1, lo2 = st.columns(2)
+    with lo1:
+        st.markdown("Line of Insurance")
+        loi = st.text_input("", placeholder="e.g., property, casualty, auto")
+        st.caption("Searches Coverage Type, Line of Insurance, Line of Business, and RIRS Line of Business.")
+    with lo2:
+        st.markdown("Disposition")
+        disposition = st.text_input("", placeholder="e.g., settled, dismissed")
+
+    btn1, btn2 = st.columns([1, 1])
+    with btn1:
+        search_clicked = st.form_submit_button("Search", type="primary")
+    with btn2:
         reset_clicked = st.form_submit_button("Reset")
 
 if reset_clicked:
@@ -758,11 +780,9 @@ if search_clicked:
             "loi": loi or None,
             "doc_name": doc_name or None,
             "file_type": file_type or None,
-            "topics": topics or None,
-            "geo": geo or None,
-            "attachment_type": attachment_type or None,
             "state_keywords": state_keywords or None,
             "reason": reason or None,
+            "disposition": disposition or None,
         }
         st.session_state.results = run_search(user, query, business_area, filters, date_filters)
         st.session_state.payload = build_search_payload(user, query, business_area, filters)
@@ -772,147 +792,110 @@ if search_clicked:
 # ==============================================================================
 
 if st.session_state.results is not None:
-    filters = []
+    chips = []
+    chips.append(f"Business Area: {business_area}")
     if case_type:
-        filters.append(f"Case Type: {case_type}")
-    if status:
-        filters.append(f"Status: {status}")
-    if case_subtype:
-        filters.append(f"Sub-Type: {case_subtype}")
-    if loi:
-        filters.append(f"LOI: {loi}")
-    if tracking_id:
-        filters.append(f"Tracking ID: {tracking_id}")
-    if investigator:
-        filters.append(f"Investigator: {investigator}")
+        chips.append(f"Case Type: {case_type}")
     if entity:
-        filters.append(f"Entity: {entity}")
-    if naic_group:
-        filters.append(f"NAIC Group: {naic_group}")
+        chips.append(f"Entity Name: {entity}")
+    if tracking_id:
+        chips.append(f"Tracking ID: {tracking_id}")
+    if status:
+        chips.append(f"Status: {status}")
+    if investigator:
+        chips.append(f"Investigator: {investigator}")
     if doc_name:
-        filters.append(f"Doc Name: {doc_name}")
+        chips.append(f"Document Name: {doc_name}")
     if file_type:
-        filters.append(f"File Type: {file_type}")
-    if topics:
-        filters.append(f"Topics: {topics}")
-    if geo:
-        filters.append(f"Geo: {geo}")
-    if attachment_type:
-        filters.append(f"Attachment Type: {attachment_type}")
+        chips.append(f"File Type: {file_type}")
+    if case_subtype:
+        chips.append(f"Case Sub-Type: {case_subtype}")
     if state_keywords:
-        filters.append(f"State Keywords: {', '.join(state_keywords)}")
+        chips.append(f"State Keyword: {', '.join(state_keywords)}")
     if reason:
-        filters.append(f"Reason: {reason}")
+        chips.append(f"Reason: {reason}")
+    if loi:
+        chips.append(f"Line of Insurance: {loi}")
+    if disposition:
+        chips.append(f"Disposition: {disposition}")
     if any(date_filters.values()):
-        filters.append("Date Filters: Active")
+        chips.append("Date Filters: Active")
 
-    if filters:
-        st.markdown("#### Active Filters")
-        chips_html = "".join([f"<span class='filter-chip'>{escape(f)}</span>" for f in filters])
+    if chips:
+        st.markdown("### Active Filters")
+        chips_html = "".join(
+            [f"<span class='filter-chip'>{escape(f)} <b style='cursor:pointer;'>×</b></span>" for f in chips]
+        )
         st.markdown(chips_html, unsafe_allow_html=True)
 
 # ==============================================================================
-# RESULTS TABLE
+# RESULTS TABLE (Wireframe-accurate)
 # ==============================================================================
 
 if st.session_state.results is not None:
     results = st.session_state.results
-    st.markdown(f"### Search Results `{len(results)}`")
+    st.markdown(f"## Search Results ({len(results)} results)")
     if not results:
         st.info("No documents match the search and authorization criteria.")
     else:
-        all_columns = [
-            "ATTACHMENT_ID",
-            "TRACKING_ID",
-            "FILE_NAME",
-            "DOC_TITLE",
-            "DOC_TYPE",
-            "DOC_DATE",
-            "UPLOAD_DATE",
-            "BUSINESS_AREA",
-            "STATE",
-            "CASE_TYPE",
-            "CASE_STATUS",
-            "CASE_SUBTYPE",
-            "LOI_DISPLAY",
-            "LOI_LIST",
-            "UPLOADED_BY_RESOLVED",
-            "INVESTIGATOR_DISPLAY",
-            "ENTITY_NAME_DISPLAY",
-            "ATTACHMENT_TYPE",
-            "SEMANTIC_SCORE",
-        ]
-        st.markdown("#### Column Picker")
-        valid_options = [c for c in all_columns if c not in ["ATTACHMENT_ID", "TRACKING_ID"]]
+        # Export + Column Picker row
+        btn_row = st.columns([1, 1, 6])
+        with btn_row[0]:
+            st.button("📁 Export To Excel")
+        with btn_row[1]:
+            st.button("⚙ Column Picker")
 
-        # sanitize defaults so Streamlit doesn't crash
-        default_cols = [c for c in st.session_state.visible_columns if c in valid_options]
-        
-        st.session_state.visible_columns = st.multiselect(
-            "Visible Columns (Attachment ID and Tracking ID are always shown)",
-            options=valid_options,
-            default=default_cols,
-        )
-
-
-        table_html = "<table class='results-table'><thead><tr>"
-        table_html += "<th>Attachment ID</th><th>Tracking ID</th>"
-        
-        # NEW: Download column
-        table_html += "<th>Download</th>"
-        
-        for col in st.session_state.visible_columns:
-            table_html += f"<th>{escape(col.replace('_', ' '))}</th>"
-        table_html += "</tr></thead><tbody>"
-        
+        # Fixed table columns per wireframe
+        table_html = """
+<table class='results-table'>
+<thead>
+<tr>
+    <th>Attachment ID</th>
+    <th>Tracking ID</th>
+    <th>File Name</th>
+    <th>Summary</th>
+    <th>Upload Date</th>
+    <th>Created By</th>
+    <th>Actions</th>
+</tr>
+</thead>
+<tbody>
+"""
         for r in results:
             table_html += "<tr>"
             table_html += f"<td>{escape(r['ATTACHMENT_ID'])}</td>"
-        
-            # Tracking ID clickable link
-            table_html += (
-                f"<td><span class='tracking-link' title='Opens Case Summary in V2'>"
-                f"{escape(r['TRACKING_ID'])}</span></td>"
-            )
-        
-            # NEW: Download column (pseudo-button)
+            table_html += f"<td>{escape(r['TRACKING_ID'])}</td>"
+            table_html += f"<td>{escape(r['FILE_NAME'])}</td>"
+            table_html += f"<td>“{r['SNIPPET']}”</td>"
+            table_html += f"<td>{escape(r['UPLOAD_DATE'])}</td>"
+            table_html += f"<td>{escape(r['UPLOADED_BY_RESOLVED'])}</td>"
+
+            # Actions: more_vert menu icon, anchored to real download button below
+            table_html += "<td>"
             if r["CAN_DOWNLOAD"]:
                 table_html += (
-                    "<td>"
-                    f"<a href='#dl_{r['DOC_ID']}' class='tracking-link' "
-                    "title='Scroll to download button'>⬇ Download</a>"
-                    "</td>"
+                    f"<a href='#dl_{r['DOC_ID']}' class='actions-link' "
+                    "title='More actions (Download, View)'>more_vert</a>"
                 )
             else:
-                table_html += "<td><span class='badge-denied'>RESTRICTED</span></td>"
-        
-            # Remaining columns
-            for col in st.session_state.visible_columns:
-                val = r.get(col)
-                if col == "SNIPPET":
-                    cell = f"<span class='sdp-snippet'>“{r['SNIPPET']}”</span>"
-                elif col == "LOI_LIST" and isinstance(val, list):
-                    cell = ", ".join(val)
-                elif col == "SEMANTIC_SCORE":
-                    cell = f"{r['SEMANTIC_SCORE']:.2f}"
-                else:
-                    cell = escape(str(val)) if val is not None else "N/A"
-                table_html += f"<td>{cell}</td>"
-        
+                table_html += "<span class='badge-denied'>RESTRICTED</span>"
+            table_html += "</td>"
+
             table_html += "</tr>"
-        
+
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-
+        # Real actions section with actual download buttons
         st.markdown("#### Actions")
         for r in results:
+            st.markdown(f"<a name='dl_{r['DOC_ID']}'></a>", unsafe_allow_html=True)
             cols = st.columns([3, 1])
             with cols[0]:
                 st.caption(f"{r['DOC_ID']} · {r['FILE_NAME']}")
             with cols[1]:
                 if r["CAN_DOWNLOAD"]:
-                    if st.button("⬇ Download", key=f"dl_{r['DOC_ID']}"):
+                    if st.button("⬇ Download", key=f"dl_btn_{r['DOC_ID']}"):
                         ok, msg = download_document(user, r["_doc"], r["_case"])
                         if ok:
                             st.success(msg)
@@ -922,7 +905,7 @@ if st.session_state.results is not None:
                     st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
 
 # ==============================================================================
-# GOVERNANCE / INSPECTOR (TECHNICAL MODE ONLY)
+# GOVERNANCE / INSPECTOR (Technical Mode only)
 # ==============================================================================
 
 if mode == "Technical Review":
