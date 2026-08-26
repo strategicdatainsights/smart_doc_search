@@ -1,383 +1,189 @@
-import streamlit as st
-import pandas as pd
+import math
 import re
 from html import escape
+import pandas as pd
+import streamlit as st
 
+# ==============================================================================
+# PAGE CONFIG & CUSTOM CSS
+# ==============================================================================
 st.set_page_config(
-    page_title="Smart Document Platform",
+    page_title="Smart Document Platform — SD / ID",
     page_icon="📄",
     layout="wide",
     initial_sidebar_state="collapsed",
 )
 
-# ==============================================================================
-# MOCK SECURITY / GOVERNANCE CONFIGURATION (South Dakota / Idaho)
-# ==============================================================================
+st.markdown(
+    """
+    <style>
+    .sdp-nav {
+        background-color: #1E3A8A;
+        padding: 12px 20px;
+        border-radius: 6px;
+        color: white;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+    }
+    .sdp-nav-title {
+        font-size: 1.2rem;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+    }
+    .sdp-nav-persona {
+        font-size: 0.9rem;
+        font-weight: 500;
+    }
+    .badge-full {
+        background-color: #10B981;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-masked {
+        background-color: #F59E0B;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .badge-denied {
+        background-color: #EF4444;
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    .meta-section {
+        background-color: #F8FAFC;
+        padding: 14px;
+        border-radius: 6px;
+        border: 1px solid #E2E8F0;
+    }
+    .meta-row {
+        margin-bottom: 4px;
+        font-size: 0.88rem;
+    }
+    .meta-label {
+        font-weight: 600;
+        color: #475569;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
+# ==============================================================================
+# MOCK DATASETS & FIELD MATRIX (50 RECORD GENERATOR)
+# ==============================================================================
 USERS = {
-    "Regulator — SD (Full Access)": {
-        "username": "reg.sd@state.sd.gov",
+    "reg_sd_user": {
+        "username": "reg_sd_user@state.gov",
         "role": "STATE_REGULATOR",
         "state": "SD",
-        "jurisdiction": "SD",
-        "business_areas": ["Market Regulation", "Complaints", "Exams"],
-        "can_download": True,
-        "unmasked_pii": True,
-    },
-    "Analyst — SD (Exams Only, Masked)": {
-        "username": "analyst.sd@state.sd.gov",
-        "role": "FINANCIAL_ANALYST",
-        "state": "SD",
-        "jurisdiction": "SD",
-        "business_areas": ["Exams"],
-        "can_download": True,
+        "business_areas": ["Market Regulation", "Company Licensing"],
         "unmasked_pii": False,
+        "can_download": True,
     },
-    "Analyst — ID (Exams Only, No Download)": {
-        "username": "analyst.id@state.id.gov",
-        "role": "FINANCIAL_ANALYST",
+    "reg_id_user": {
+        "username": "reg_id_user@state.gov",
+        "role": "STATE_REGULATOR",
         "state": "ID",
-        "jurisdiction": "ID",
-        "business_areas": ["Exams"],
-        "can_download": False,
+        "business_areas": ["Market Regulation"],
         "unmasked_pii": False,
+        "can_download": True,
     },
-}
-
-# ==============================================================================
-# SNOWFLAKE-READY MOCK TABLES
-# ==============================================================================
-
-DOC_SEARCH_CONTENT = [
-    {
-        "DOC_ID": "DOC-10001",
-        "ATTACHMENT_ID": "890786543",
-        "CONTENT_TEXT": (
-            "Accident appears to have occurred on Monday evening near Sioux Falls "
-            "at the intersection of Main and 10th Street. Jane Smith reported the "
-            "incident to Prairie Plains Mutual Insurance Company."
-        ),
-        "FILE_PATH": "SD/Market Regulation/890786543/accident_investigation_sd.docx",
-        "BUSINESS_AREA": "Market Regulation",
-        "DOC_STATE": "SD",
-        "CONTENT_HASH": "sha256:aaa111",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2019-10-03",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Accident Investigation Report — Sioux Falls",
-        "DOCUMENT_TYPE": "Accident Report",
-        "PAGE_COUNT": 4,
-        "MIME_TYPE": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.94,
-        "KEY_PHRASES": ["accident", "Sioux Falls", "Prairie Plains"],
-        "TOPICS": ["Auto", "Accident"],
-        "SUMMARY": "Accident near Sioux Falls reported by Jane Smith to Prairie Plains Mutual.",
-        "GEO_LOCATION": "Sioux Falls, SD",
-        "EVENT_DATE": "2019-09-30",
-        "PARTIES_MENTIONED": ["Jane Smith", "Prairie Plains Mutual Insurance Company"],
+    "fraud_investigator": {
+        "username": "investigator@state.gov",
+        "role": "INVESTIGATOR",
+        "state": "SD",
+        "business_areas": ["Fraud Investigation", "Market Regulation"],
+        "unmasked_pii": True,
+        "can_download": True,
     },
-    {
-        "DOC_ID": "DOC-10002",
-        "ATTACHMENT_ID": "890786544",
-        "CONTENT_TEXT": (
-            "The claimant filed a formal dispute concerning the accident "
-            "that occurred on December 19th near Rapid City. Jane Doe contacted "
-            "Black Hills Mutual Insurance Company."
-        ),
-        "FILE_PATH": "SD/Market Regulation/890786544/jane_doe_dispute_sd.pdf",
-        "BUSINESS_AREA": "Market Regulation",
-        "DOC_STATE": "SD",
-        "CONTENT_HASH": "sha256:bbb222",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2019-12-22",
-        "LOCKED": True,
-        "DOCUMENT_TITLE": "Formal Dispute — Rapid City Accident",
-        "DOCUMENT_TYPE": "Dispute Letter",
-        "PAGE_COUNT": 3,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": False,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.91,
-        "KEY_PHRASES": ["formal dispute", "Rapid City", "Black Hills"],
-        "TOPICS": ["Auto", "Dispute"],
-        "SUMMARY": "Formal dispute filed by claimant regarding Rapid City accident.",
-        "GEO_LOCATION": "Rapid City, SD",
-        "EVENT_DATE": "2019-12-19",
-        "PARTIES_MENTIONED": ["Jane Doe", "Black Hills Mutual Insurance Company"],
-    },
-    {
-        "DOC_ID": "DOC-10003",
-        "ATTACHMENT_ID": "890786545",
-        "CONTENT_TEXT": (
-            "The policyholder submitted a formal complaint regarding claim denial "
-            "for a vehicle loss near Pierre. The complaint was assigned for review."
-        ),
-        "FILE_PATH": "SD/Complaints/890786545/uniformdoc_sd.pdf",
-        "BUSINESS_AREA": "Complaints",
-        "DOC_STATE": "SD",
-        "CONTENT_HASH": "sha256:ccc333",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2020-01-05",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Complaint — Vehicle Loss near Pierre",
-        "DOCUMENT_TYPE": "Complaint",
-        "PAGE_COUNT": 2,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": False,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.93,
-        "KEY_PHRASES": ["complaint", "claim denial", "vehicle loss"],
-        "TOPICS": ["Auto", "Complaint"],
-        "SUMMARY": "Complaint regarding denial of vehicle loss claim near Pierre.",
-        "GEO_LOCATION": "Pierre, SD",
-        "EVENT_DATE": "2020-01-02",
-        "PARTIES_MENTIONED": [],
-    },
-    {
-        "DOC_ID": "DOC-10004",
-        "ATTACHMENT_ID": "890786546",
-        "CONTENT_TEXT": (
-            "Details of damage sustained by vehicle after accident near Sioux Falls. "
-            "Total loss assessment filed by the adjuster."
-        ),
-        "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
-        "BUSINESS_AREA": "Exams",
-        "DOC_STATE": "SD",
-        "CONTENT_HASH": "sha256:ddd444",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2020-01-22",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Exam — Accident Damage Assessment",
-        "DOCUMENT_TYPE": "Exam Report",
-        "PAGE_COUNT": 5,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": True,
-        "EXTRACTION_CONFIDENCE": 0.95,
-        "KEY_PHRASES": ["total loss", "accident", "Sioux Falls"],
-        "TOPICS": ["Auto", "Exam"],
-        "SUMMARY": "Exam report detailing total loss assessment after accident near Sioux Falls.",
-        "GEO_LOCATION": "Sioux Falls, SD",
-        "EVENT_DATE": "2020-01-20",
-        "PARTIES_MENTIONED": [],
-    },
-    {
-        "DOC_ID": "DOC-10005",
-        "ATTACHMENT_ID": "890786547",
-        "CONTENT_TEXT": (
-            "Details of accident damage assessment from third party inspector "
-            "retained by Snake River Group LLC near Boise, Idaho."
-        ),
-        "FILE_PATH": "ID/Exams/890786547/cornwall_motorcycle_club_id.docx",
-        "BUSINESS_AREA": "Exams",
-        "DOC_STATE": "ID",
-        "CONTENT_HASH": "sha256:eee555",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2020-02-10",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Exam — Snake River Group Accident Assessment",
-        "DOCUMENT_TYPE": "Exam Report",
-        "PAGE_COUNT": 6,
-        "MIME_TYPE": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": True,
-        "EXTRACTION_CONFIDENCE": 0.92,
-        "KEY_PHRASES": ["third party inspector", "Snake River Group", "Boise"],
-        "TOPICS": ["Casualty", "Exam"],
-        "SUMMARY": "Exam report from third-party inspector for Snake River Group accident near Boise.",
-        "GEO_LOCATION": "Boise, ID",
-        "EVENT_DATE": "2020-02-08",
-        "PARTIES_MENTIONED": ["Snake River Group LLC"],
-    },
-]
-
-SBS_ATTACHMENTS = {
-    "890786543": {
-        "FILE_NAME": "accident_investigation_sd.docx",
-        "TRACKING_ID": "12350",
-        "ATTACHMENT_TYPE": "Report",
-        "UPLOAD_USER": "adjuster.sd@carrier.com",
-        "UPLOAD_TIMESTAMP": "2019-10-03T10:15:00Z",
-    },
-    "890786544": {
-        "FILE_NAME": "jane_doe_dispute_sd.pdf",
-        "TRACKING_ID": "12351",
-        "ATTACHMENT_TYPE": "Letter",
-        "UPLOAD_USER": "claimant.sd@consumer.com",
-        "UPLOAD_TIMESTAMP": "2019-12-22T09:30:00Z",
-    },
-    "890786545": {
-        "FILE_NAME": "uniformdoc_sd.pdf",
-        "TRACKING_ID": "12352",
-        "ATTACHMENT_TYPE": "Complaint",
-        "UPLOAD_USER": "complaints.sd@doi.gov",
-        "UPLOAD_TIMESTAMP": "2020-01-05T14:00:00Z",
-    },
-    "890786546": {
-        "FILE_NAME": "accident_detail_sd.pdf",
-        "TRACKING_ID": "12345",
-        "ATTACHMENT_TYPE": "Exam Report",
-        "UPLOAD_USER": "examiner.sd@doi.gov",
-        "UPLOAD_TIMESTAMP": "2020-01-22T11:45:00Z",
-    },
-    "890786547": {
-        "FILE_NAME": "cornwall_motorcycle_club_id.docx",
-        "TRACKING_ID": "12355",
-        "ATTACHMENT_TYPE": "Exam Report",
-        "UPLOAD_USER": "examiner.id@doi.gov",
-        "UPLOAD_TIMESTAMP": "2020-02-10T16:20:00Z",
-    },
-}
-
-SBS_CASES = {
-    "12350": {
-        "CASE_TYPE": "Complaints",
-        "CASE_STATUS": "Open",
-        "INVESTIGATOR": "A. Miller",
-        "SECONDARY_INVESTIGATOR": None,
-        "ENTITY_NAME": "Prairie Plains Mutual Insurance Company",
-        "NAIC_GROUP_NUMBER": "9083",
-        "CASE_SUBTYPE": "Inquiry",
-        "LOI": "Property",
-    },
-    "12351": {
-        "CASE_TYPE": "Enforcement",
-        "CASE_STATUS": "Closed",
-        "INVESTIGATOR": "R. Vance",
-        "SECONDARY_INVESTIGATOR": "C. Davis",
-        "ENTITY_NAME": "Black Hills Mutual Insurance Company",
-        "NAIC_GROUP_NUMBER": "8056",
-        "CASE_SUBTYPE": "Investigations",
-        "LOI": "Casualty",
-    },
-    "12352": {
-        "CASE_TYPE": "Complaints",
-        "CASE_STATUS": "Open",
-        "INVESTIGATOR": "A. Miller",
-        "SECONDARY_INVESTIGATOR": None,
-        "ENTITY_NAME": "Dakota Plains Insurance Company",
-        "NAIC_GROUP_NUMBER": "1234",
-        "CASE_SUBTYPE": "Inquiry",
-        "LOI": "Auto",
-    },
-    "12345": {
-        "CASE_TYPE": "Market Conduct Exams",
-        "CASE_STATUS": "Under Review",
-        "INVESTIGATOR": "C. Davis",
-        "SECONDARY_INVESTIGATOR": "A. Miller",
-        "ENTITY_NAME": "Missouri River Life Underwriters",
-        "NAIC_GROUP_NUMBER": "5678",
-        "CASE_SUBTYPE": "Market Conduct",
-        "LOI": "Life",
-    },
-    "12355": {
-        "CASE_TYPE": "Market Conduct Exams",
-        "CASE_STATUS": "Closed",
-        "INVESTIGATOR": "C. Davis",
-        "SECONDARY_INVESTIGATOR": None,
-        "ENTITY_NAME": "Snake River Group LLC",
-        "NAIC_GROUP_NUMBER": "7777",
-        "CASE_SUBTYPE": "Market Conduct",
-        "LOI": "Casualty",
+    "analyst_no_download": {
+        "username": "analyst@state.gov",
+        "role": "ANALYST",
+        "state": "SD",
+        "business_areas": ["Market Regulation"],
+        "unmasked_pii": False,
+        "can_download": False,
     },
 }
 
 FIELD_MATRIX = {
-    "Market Regulation": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
-    "Complaints": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
-    "Exams": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
+    "Market Regulation": {
+        "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
+    },
+    "Company Licensing": {
+        "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
+    },
+    "Fraud Investigation": {
+        "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
+    },
 }
 
-# ==============================================================================
-# CSS STYLING & ACCORDION SYSTEM
-# ==============================================================================
+# --- 50 RECORD DYNAMIC GENERATOR ---
+SBS_ATTACHMENTS = {}
+SBS_CASES = {}
+DOC_SEARCH_CONTENT = []
 
-st.markdown("""
-<style>
-html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 0 !important; max-width: 95% !important; }
+entities = [
+    "Prairie Plains Mutual Insurance Company", "Black Hills Mutual Insurance Company",
+    "Dakota National Life", "Rushmore Casualty Co.", "Sioux Falls Title & Escrow",
+    "Idaho Timber Mutual", "Boise Valley Risk Partners", "Gem State Indemnity"
+]
+investigators = ["A. Miller", "R. Vance", "J. Doe", "C. Smith", "K. Johnson", "M. Davis"]
+doc_types = ["Accident Report", "Dispute Letter", "License Renewal Application", "Audit Assessment", "Fraud Referral"]
+business_areas = ["Market Regulation", "Company Licensing", "Fraud Investigation"]
+case_types = ["Enforcement", "Dispute", "Compliance Review", "Fraud Investigation"]
+statuses = ["Open", "Under Review", "Closed", "Pending Hearing"]
+subtypes = ["Auto Claim", "Policy Dispute", "Financial Audit", "Agent Conduct"]
+lines_of_insurance = ["Property & Casualty", "Life & Health", "Commercial Liability", "Workers Comp"]
 
-.sdp-nav {
-    background: #3f51b5;
-    color: white;
-    padding: 12px 24px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 24px;
-    border-radius: 0 0 6px 6px;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-}
-.sdp-nav-title { font-size: 20px; font-weight: 600; letter-spacing: 0.3px; }
-.sdp-nav-persona {
-    background: rgba(255, 255, 255, 0.18);
-    padding: 6px 14px;
-    border-radius: 4px;
-    font-size: 13px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-.badge-full {
-    background: #e8f5e9;
-    color: #2e7d32;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-.badge-masked {
-    background: #fff3e0;
-    color: #e65100;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-.badge-denied {
-    background: #ffebee;
-    color: #c62828;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-.badge-locked {
-    background: #ede7f6;
-    color: #512da8;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
-}
-
-.result-card {
-    background: #ffffff;
-    border: 1px solid #e0e0e0;
-    border-radius: 6px;
-    padding: 16px;
-    margin-bottom: 12px;
-}
-.meta-section { margin-bottom: 12px; }
-.meta-section h4 { margin: 0 0 6px 0; font-size: 13px; font-weight: 600; color: #333; }
-.meta-row { font-size: 13px; margin-bottom: 4px; color: #444; }
-.meta-label { font-weight: 600; color: #222; }
-
-mark {
-    background: #fff59d;
-    padding: 0 2px;
-    border-radius: 2px;
-}
-</style>
-""", unsafe_allow_html=True)
+for i in range(1, 51):
+    doc_id = f"DOC-{10000 + i}"
+    att_id = f"ATT-{1000 + i}"
+    trk_id = f"TRK-{9000 + i}"
+    state = "SD" if i % 2 != 0 else "ID"
+    ba = business_areas[i % len(business_areas)]
+    entity = entities[i % len(entities)]
+    investigator = investigators[i % len(investigators)]
+    doc_type = doc_types[i % len(doc_types)]
+    
+    SBS_ATTACHMENTS[att_id] = {
+        "FILE_NAME": f"{doc_type.replace(' ', '_')}_Record_{i}.pdf",
+        "TRACKING_ID": trk_id
+    }
+    
+    SBS_CASES[trk_id] = {
+        "ENTITY_NAME": entity,
+        "INVESTIGATOR": investigator,
+        "SECONDARY_INVESTIGATOR": "J. Doe" if i % 3 == 0 else None,
+        "CASE_TYPE": case_types[i % len(case_types)],
+        "CASE_STATUS": statuses[i % len(statuses)],
+        "CASE_SUBTYPE": subtypes[i % len(subtypes)],
+        "LOI": lines_of_insurance[i % len(lines_of_insurance)],
+        "NAIC_GROUP_NUMBER": str(10000 + (i * 123)),
+    }
+    
+    DOC_SEARCH_CONTENT.append({
+        "DOC_ID": doc_id,
+        "ATTACHMENT_ID": att_id,
+        "DOCUMENT_TITLE": f"{doc_type} — Record #{i} ({entity})",
+        "DOCUMENT_TYPE": doc_type,
+        "UPLOAD_DATE": f"2024-10-{(i % 28) + 1:02d}",
+        "BUSINESS_AREA": ba,
+        "DOC_STATE": state,
+        "IS_CURRENT": True,
+        "CONTENT_TEXT": f"{doc_type} generated for {entity} operating in state jurisdiction {state}. Assigned primary investigator {investigator}. Review case details under tracking ID {trk_id}.",
+    })
 
 # ==============================================================================
 # BACKEND SIMULATION & MASKING
@@ -534,7 +340,6 @@ def run_search(user, query, selected_ba, filters):
             "INVESTIGATOR_DISPLAY": display_investigator,
             "ENTITY_NAME_DISPLAY": display_entity,
             "LOI_DISPLAY": case["LOI"],
-            "LOCKED": d["LOCKED"],
             "CAN_DOWNLOAD": user["can_download"],
             "_doc": d,
             "_attachment": attachment,
@@ -582,52 +387,19 @@ current_user = {
 
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
 download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
-# Header & Context Controls on Main Page
+
+# Header Navigation
 st.markdown(
     f"""
     <div class="sdp-nav">
         <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
         <div class="sdp-nav-persona">
-            <span>{current_user['username']}</span> · {pii_badge} {download_badge}
+            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']}</span> · {pii_badge} {download_badge}
         </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
-
-# Inline Governance Selectors
-c_persona, c_role, c_state = st.columns([1, 1, 1])
-with c_persona:
-    selected_user_key = st.selectbox(
-        "Active Persona",
-        options=list(USERS.keys()),
-        index=list(USERS.keys()).index(st.session_state.selected_user_key),
-    )
-    st.session_state.selected_user_key = selected_user_key
-    base_user = USERS[selected_user_key]
-
-available_roles = sorted(list({u["role"] for u in USERS.values()}))
-available_states = sorted(list({u["state"] for u in USERS.values()}))
-
-with c_role:
-    selected_role = st.selectbox(
-        "User Role",
-        options=available_roles,
-        index=available_roles.index(base_user["role"]) if base_user["role"] in available_roles else 0,
-    )
-
-with c_state:
-    selected_state = st.selectbox(
-        "State Jurisdiction",
-        options=available_states,
-        index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
-    )
-
-current_user = {
-    **base_user,
-    "role": selected_role,
-    "state": selected_state,
-}
 
 st.title("Document Search & Governance Engine")
 
@@ -715,7 +487,7 @@ if st.session_state.search_results is not None:
             column_config={
                 "Access Status": st.column_config.TextColumn(
                     "Access",
-                    help="Authorization and audit lock state",
+                    help="Authorization state",
                     width="small",
                 ),
                 "Download Link": st.column_config.LinkColumn(
@@ -772,85 +544,7 @@ if st.session_state.search_results is not None:
                         unsafe_allow_html=True
                     )
 
-# ==============================================================================
-# TECHNICAL & GOVERNANCE INSPECTOR PANELS
-# ==============================================================================
-
-with st.expander("🛠 Governance / Integration Inspector", expanded=False):
-    col_g1, col_g2, col_g3 = st.columns(3)
-
-    with col_g1:
-        st.markdown("### Backend Payload")
-        if st.session_state.current_payload:
+        # 3. Backend Search Payload Inspector
+        st.markdown("<br>", unsafe_allow_html=True)
+        with st.expander("🔍 View Backend Search Payload (Governance & Cortex AI Debug)", expanded=False):
             st.json(st.session_state.current_payload)
-        else:
-            st.info("Run a search to view the generated payload.")
-
-    with col_g2:
-        st.markdown("### Authorization Trace")
-        st.json({
-            "authenticated_user": current_user["username"],
-            "role": current_user["role"],
-            "jurisdiction": current_user["jurisdiction"],
-            "enforced_state": current_user["state"],
-            "entitled_business_areas": current_user["business_areas"],
-            "pii_representation": "FULL" if current_user["unmasked_pii"] else "MASKED",
-            "raw_download": current_user["can_download"],
-            "authorization_boundary": "Spring Boot",
-            "cortex_search_is_authorization_boundary": False,
-        })
-
-    with col_g3:
-        st.markdown("### Document Relationship")
-        st.json({
-            "document": {
-                "DOC_ID": "DOC-10004",
-                "ATTACHMENT_ID": "890786546",
-                "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
-            },
-            "relationship": {
-                "ATTACHMENT_ID": "→ SBS.ATTACHMENT.ATTACHMENT_ID",
-                "TRACKING_ID": "→ MR_CASE.TRACKING_ID",
-                "structured_case_metadata": "→ SBS case tables",
-            },
-            "search_content": {
-                "CONTENT_TEXT": "→ parsed document text",
-            },
-            "governance": {
-                "DOC_STATE": "→ entitlement / jurisdiction",
-                "BUSINESS_AREA": "→ entitlement",
-                "PII": "→ full or search-safe representation via SBS join",
-            },
-        })
-
-with st.expander("🧪 Security Test Scenarios", expanded=False):
-    st.markdown("""
-### Persona-Based Security Demonstrations
-
-1. **SD Regulator** — full metadata, full PII, download enabled  
-2. **SD Analyst** — masked PII, Exams only  
-3. **ID Analyst** — masked PII, Exams only, download disabled  
-4. **State Isolation** — DOC_STATE must match authenticated user  
-5. **Business-Area Isolation** — only entitled business areas  
-6. **PII Masking** — entity, investigator, filenames masked  
-7. **Raw Access Control** — download independently authorized  
-8. **Payload Control** — backend selects fields, UI cannot override
-""")
-
-with st.expander("📐 Architecture / Data Flow", expanded=False):
-    st.markdown("""
-### End-to-End Pipeline
-
-`S3 → DOC_SEARCH_CONTENT → Spring Boot Authorization → Cortex Search → SBS.ATTACHMENT / MR_CASE Join → UI`
-
-### Key Architecture Notes
-
-- **DOC_SEARCH_CONTENT** — parsed text + extraction confidence  
-- **SBS.ATTACHMENT** — upload metadata  
-- **MR_CASE** — case metadata  
-- **Authorization Boundary** — Spring Boot enforces entitlement + masking  
-- **Cortex Search** — text search only, no authorization  
-- **UI** — displays permitted representation only
-""")
-
-st.markdown("<br><hr><center><small>Smart Document Platform — Prototype Build</small></center>", unsafe_allow_html=True)
