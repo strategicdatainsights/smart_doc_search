@@ -597,18 +597,52 @@ st.sidebar.markdown(f"**Download Permission:** {current_user['can_download']}")
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
 download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
 
-# Header Navigation
+# Header & Context Controls on Main Page
 st.markdown(
     f"""
     <div class="sdp-nav">
         <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
         <div class="sdp-nav-persona">
-            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']}</span> · {pii_badge} {download_badge}
+            <span>{current_user['username']}</span> · {pii_badge} {download_badge}
         </div>
     </div>
     """,
     unsafe_allow_html=True,
 )
+
+# Inline Governance Selectors
+c_persona, c_role, c_state = st.columns([1, 1, 1])
+with c_persona:
+    selected_user_key = st.selectbox(
+        "Active Persona",
+        options=list(USERS.keys()),
+        index=list(USERS.keys()).index(st.session_state.selected_user_key),
+    )
+    st.session_state.selected_user_key = selected_user_key
+    base_user = USERS[selected_user_key]
+
+available_roles = sorted(list({u["role"] for u in USERS.values()}))
+available_states = sorted(list({u["state"] for u in USERS.values()}))
+
+with c_role:
+    selected_role = st.selectbox(
+        "User Role",
+        options=available_roles,
+        index=available_roles.index(base_user["role"]) if base_user["role"] in available_roles else 0,
+    )
+
+with c_state:
+    selected_state = st.selectbox(
+        "State Jurisdiction",
+        options=available_states,
+        index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
+    )
+
+current_user = {
+    **base_user,
+    "role": selected_role,
+    "state": selected_state,
+}
 
 st.title("Document Search & Governance Engine")
 
