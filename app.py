@@ -1,4 +1,3 @@
-import math
 import re
 from html import escape
 import pandas as pd
@@ -27,74 +26,62 @@ st.markdown(
         align-items: center;
         margin-bottom: 20px;
     }
-    .sdp-nav-title {
-        font-size: 1.2rem;
-        font-weight: 700;
-        letter-spacing: 0.5px;
-    }
-    .sdp-nav-persona {
-        font-size: 0.9rem;
-        font-weight: 500;
-    }
-    .badge-full {
-        background-color: #10B981;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .badge-masked {
-        background-color: #F59E0B;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .badge-denied {
-        background-color: #EF4444;
-        color: white;
-        padding: 2px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-    .meta-section {
-        background-color: #F8FAFC;
-        padding: 14px;
-        border-radius: 6px;
-        border: 1px solid #E2E8F0;
-    }
-    .meta-row {
-        margin-bottom: 4px;
-        font-size: 0.88rem;
-    }
-    .meta-label {
-        font-weight: 600;
-        color: #475569;
-    }
+    .sdp-nav-title { font-size: 1.2rem; font-weight: 700; letter-spacing: 0.5px; }
+    .sdp-nav-persona { font-size: 0.9rem; font-weight: 500; }
+    .badge-full { background-color: #10B981; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-masked { background-color: #F59E0B; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .badge-denied { background-color: #EF4444; color: white; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+    .meta-section { background-color: #F8FAFC; padding: 14px; border-radius: 6px; border: 1px solid #E2E8F0; }
+    .meta-row { margin-bottom: 4px; font-size: 0.88rem; }
+    .meta-label { font-weight: 600; color: #475569; }
     </style>
     """,
     unsafe_allow_html=True,
 )
 
 # ==============================================================================
-# MOCK DATASETS & FIELD MATRIX
+# PERSONA DEFINITIONS & HARDCODED ENTITLEMENT BOUNDARIES
 # ==============================================================================
-FIELD_MATRIX = {
-    "Market Regulation": {
-        "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
+PERSONA_PROFILES = {
+    "Market Conduct Examiner": {
+        "username": "reg_examiner@state.gov",
+        "default_state": "SD",
+        "business_area": "Market Regulation",
+        "can_download": True,
+        "unmasked_pii": True,
+        "role_name": "Market Conduct Examiner",
     },
-    "Company Licensing": {
-        "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
+    "Fraud Unit Investigator": {
+        "username": "fraud_investigator@state.gov",
+        "default_state": "SD",
+        "business_area": "Fraud Investigation",
+        "can_download": True,
+        "unmasked_pii": True,
+        "role_name": "Fraud Unit Investigator",
     },
-    "Fraud Investigation": {
-        "base": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"]
+    "Licensing Specialist": {
+        "username": "licensing_spec@state.gov",
+        "default_state": "ID",
+        "business_area": "Company Licensing",
+        "can_download": False,
+        "unmasked_pii": True,
+    },
+    "General Compliance Analyst": {
+        "username": "analyst@state.gov",
+        "default_state": "SD",
+        "business_area": "Market Regulation",
+        "can_download": False,
+        "unmasked_pii": False,
     },
 }
 
-# --- 50 RECORD DYNAMIC GENERATOR ---
+FIELD_MATRIX = {
+    "Market Regulation": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"],
+    "Company Licensing": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"],
+    "Fraud Investigation": ["DOC_ID", "DOCUMENT_TITLE", "DOCUMENT_TYPE", "UPLOAD_DATE", "BUSINESS_AREA", "DOC_STATE"],
+}
+
+# Dynamic Synthetic Document Dataset Generator
 SBS_ATTACHMENTS = {}
 SBS_CASES = {}
 DOC_SEARCH_CONTENT = []
@@ -107,10 +94,6 @@ entities = [
 investigators = ["A. Miller", "R. Vance", "J. Doe", "C. Smith", "K. Johnson", "M. Davis"]
 doc_types = ["Accident Report", "Dispute Letter", "License Renewal Application", "Audit Assessment", "Fraud Referral"]
 business_areas = ["Market Regulation", "Company Licensing", "Fraud Investigation"]
-case_types = ["Enforcement", "Dispute", "Compliance Review", "Fraud Investigation"]
-statuses = ["Open", "Under Review", "Closed", "Pending Hearing"]
-subtypes = ["Auto Claim", "Policy Dispute", "Financial Audit", "Agent Conduct"]
-lines_of_insurance = ["Property & Casualty", "Life & Health", "Commercial Liability", "Workers Comp"]
 
 for i in range(1, 51):
     doc_id = f"DOC-{10000 + i}"
@@ -130,12 +113,7 @@ for i in range(1, 51):
     SBS_CASES[trk_id] = {
         "ENTITY_NAME": entity,
         "INVESTIGATOR": investigator,
-        "SECONDARY_INVESTIGATOR": "J. Doe" if i % 3 == 0 else None,
-        "CASE_TYPE": case_types[i % len(case_types)],
-        "CASE_STATUS": statuses[i % len(statuses)],
-        "CASE_SUBTYPE": subtypes[i % len(subtypes)],
-        "LOI": lines_of_insurance[i % len(lines_of_insurance)],
-        "NAIC_GROUP_NUMBER": str(10000 + (i * 123)),
+        "CASE_TYPE": "Enforcement" if i % 2 == 0 else "Compliance Review",
     }
     
     DOC_SEARCH_CONTENT.append({
@@ -147,15 +125,12 @@ for i in range(1, 51):
         "BUSINESS_AREA": ba,
         "DOC_STATE": state,
         "IS_CURRENT": True,
-        "CONTENT_TEXT": f"{doc_type} generated for {entity} operating in state jurisdiction {state}. Assigned primary investigator {investigator}. Review case details under tracking ID {trk_id}.",
+        "CONTENT_TEXT": f"{doc_type} generated for {entity} operating in state jurisdiction {state}. Assigned investigator {investigator}. Case tracking ID {trk_id}.",
     })
 
 # ==============================================================================
-# BACKEND SIMULATION & MASKING
+# MASKING & SEARCH SERVICES
 # ==============================================================================
-
-def get_download_url(user, doc):
-    return f"https://your-api-gateway.state.gov/api/v1/download/{doc['DOC_ID']}"
 
 def mask_value(value):
     if not value:
@@ -182,38 +157,35 @@ def mask_text(text, entity_name=None):
     text = re.sub(r"\b(?:\d{3}-\d{2}-\d{4})\b", "***-**-****", text)
     return text
 
-def authorized_documents(user, selected_ba):
-    return [
-        d for d in DOC_SEARCH_CONTENT
-        if d["DOC_STATE"] == user["state"]
-        and d["BUSINESS_AREA"] == selected_ba
-        and d["IS_CURRENT"]
-    ]
-
-def build_search_payload(user, query, selected_ba, filters):
-    allowed = FIELD_MATRIX[selected_ba]["base"]
+def build_search_payload(user_context, query):
+    allowed_cols = FIELD_MATRIX[user_context["business_area"]]
     cortex_filter = {
         "@and": [
-            {"@eq": {"DOC_STATE": user["state"]}},
-            {"@eq": {"BUSINESS_AREA": selected_ba}},
+            {"@eq": {"DOC_STATE": user_context["state"]}},
+            {"@eq": {"BUSINESS_AREA": user_context["business_area"]}},
             {"@eq": {"IS_CURRENT": True}},
         ]
     }
     return {
         "query": query,
-        "columns": allowed,
+        "columns": allowed_cols,
         "filter": cortex_filter,
         "limit": 10,
-        "authorization_boundary": "Spring Boot Integration Layer",
-        "raw_document_access": "Backend Auth Enforcement",
+        "persona_context": user_context["persona_name"],
+        "entitlement_business_area": user_context["business_area"],
+        "pii_policy": "UNMASKED" if user_context["unmasked_pii"] else "MASKED",
+        "download_policy": "ENABLED" if user_context["can_download"] else "RESTRICTED",
     }
 
-def run_search(user, query, selected_ba, filters):
-    docs = authorized_documents(user, selected_ba)
+def run_search(user_context, query):
     q = query.strip().lower()
     results = []
 
-    for d in docs:
+    for d in DOC_SEARCH_CONTENT:
+        # Strict isolation: State override + Persona Business Area
+        if d["DOC_STATE"] != user_context["state"] or d["BUSINESS_AREA"] != user_context["business_area"]:
+            continue
+
         attachment = SBS_ATTACHMENTS.get(d["ATTACHMENT_ID"])
         if not attachment:
             continue
@@ -221,63 +193,21 @@ def run_search(user, query, selected_ba, filters):
         if not case:
             continue
 
-        haystack_parts = [
-            d["CONTENT_TEXT"],
-            d.get("DOCUMENT_TITLE", ""),
-            attachment["FILE_NAME"],
-            case["ENTITY_NAME"],
-            case["INVESTIGATOR"],
-            case.get("SECONDARY_INVESTIGATOR") or "",
-            case["CASE_TYPE"],
-            case["CASE_STATUS"],
-            case["CASE_SUBTYPE"],
-            case["LOI"],
-        ]
-        haystack = " ".join(haystack_parts).lower()
+        haystack = f"{d['CONTENT_TEXT']} {d['DOCUMENT_TITLE']} {attachment['FILE_NAME']} {case['ENTITY_NAME']} {case['INVESTIGATOR']}".lower()
 
-        if q:
-            terms = q.split()
-            if not all(term in haystack for term in terms):
-                continue
-
-        # Filters
-        if filters.get("case_type") and case["CASE_TYPE"] != filters["case_type"]:
-            continue
-        if filters.get("status") and case["CASE_STATUS"] != filters["status"]:
-            continue
-        if filters.get("investigator"):
-            inv_q = filters["investigator"].lower()
-            if inv_q not in case["INVESTIGATOR"].lower() and (
-                case.get("SECONDARY_INVESTIGATOR") is None
-                or inv_q not in case["SECONDARY_INVESTIGATOR"].lower()
-            ):
-                continue
-        if filters.get("entity"):
-            ent_q = filters["entity"].lower()
-            if ent_q not in case["ENTITY_NAME"].lower():
-                continue
-        if filters.get("tracking_id") and attachment["TRACKING_ID"] != filters["tracking_id"]:
-            continue
-        if filters.get("naic_group") and case["NAIC_GROUP_NUMBER"] != filters["naic_group"]:
-            continue
-        if filters.get("case_subtype") and case["CASE_SUBTYPE"] != filters["case_subtype"]:
-            continue
-        if filters.get("loi") and case["LOI"] != filters["loi"]:
+        if q and not all(term in haystack for term in q.split()):
             continue
 
-        # Masking
-        if user["unmasked_pii"]:
-            display_file_name = attachment["FILE_NAME"]
+        # Enforce Persona PII Masking
+        if user_context["unmasked_pii"]:
             display_entity = case["ENTITY_NAME"]
             display_investigator = case["INVESTIGATOR"]
             snippet = d["CONTENT_TEXT"]
         else:
-            display_file_name = mask_value(attachment["FILE_NAME"])
             display_entity = mask_value(case["ENTITY_NAME"])
             display_investigator = mask_value(case["INVESTIGATOR"])
             snippet = mask_text(d["CONTENT_TEXT"], entity_name=case["ENTITY_NAME"])
 
-        # Highlighting
         if q:
             for term in q.split():
                 snippet = re.sub(
@@ -289,75 +219,77 @@ def run_search(user, query, selected_ba, filters):
 
         results.append({
             "DOC_ID": d["DOC_ID"],
-            "ATTACHMENT_ID": d["ATTACHMENT_ID"],
-            "TRACKING_ID": attachment["TRACKING_ID"],
-            "FILE_NAME": display_file_name,
-            "DOCUMENT_TITLE": d.get("DOCUMENT_TITLE", attachment["FILE_NAME"]),
+            "DOCUMENT_TITLE": d["DOCUMENT_TITLE"],
+            "DOCUMENT_TYPE": d["DOCUMENT_TYPE"],
             "DOCUMENT_DATE": d["UPLOAD_DATE"],
-            "DOCUMENT_TYPE": d.get("DOCUMENT_TYPE", "Document"),
-            "STATE": d["DOC_STATE"],
             "BUSINESS_AREA": d["BUSINESS_AREA"],
+            "STATE": d["DOC_STATE"],
             "SNIPPET": snippet,
-            "CASE_TYPE": case["CASE_TYPE"],
-            "CASE_STATUS": case["CASE_STATUS"],
             "INVESTIGATOR_DISPLAY": display_investigator,
             "ENTITY_NAME_DISPLAY": display_entity,
-            "LOI_DISPLAY": case["LOI"],
-            "CAN_DOWNLOAD": user["can_download"],
+            "CAN_DOWNLOAD": user_context["can_download"],
             "_doc": d,
-            "_attachment": attachment,
-            "_case": case,
         })
 
     return results
 
 # ==============================================================================
-# MAIN APPLICATION & INITIALIZATION
+# STATE & SESSION INITIALIZATION
 # ==============================================================================
-
 if "search_results" not in st.session_state:
     st.session_state.search_results = None
 if "current_payload" not in st.session_state:
     st.session_state.current_payload = None
 
-# Context Controls: STATE then ROLE (REGULATOR vs ANALYST)
-c_state, c_role, c_pii, c_download = st.columns([1, 1, 1, 1])
+# Track persistent state override independently from Persona selection
+if "selected_state" not in st.session_state:
+    st.session_state.selected_state = "SD"
 
-with c_state:
-    selected_state = st.selectbox("State", options=["SD", "ID"], index=0)
+# ==============================================================================
+# MAIN APPLICATION & CONTROLS
+# ==============================================================================
 
-with c_role:
-    selected_role = st.selectbox("Role", options=["REGULATOR", "ANALYST"], index=0)
+# 1. Persona Choice Drive Identity; Independent State Dropdown Allows Override
+col_persona, col_state = st.columns([2, 1])
 
-# Role defaults & override toggles
-default_can_download = True if selected_role == "REGULATOR" else False
-default_unmasked = False
+with col_persona:
+    selected_persona_name = st.selectbox(
+        "User Persona",
+        options=list(PERSONA_PROFILES.keys()),
+        index=0
+    )
 
-with c_pii:
-    unmasked_pii = st.checkbox("Unmask PII", value=default_unmasked)
+persona_config = PERSONA_PROFILES[selected_persona_name]
 
-with c_download:
-    can_download = st.checkbox("Enable Download", value=default_can_download)
+with col_state:
+    # State override maintains independent control
+    selected_state = st.selectbox(
+        "State Override",
+        options=["SD", "ID"],
+        index=0 if st.session_state.selected_state == "SD" else 1,
+    )
+    st.session_state.selected_state = selected_state
 
-current_user = {
-    "username": f"user_{selected_state.lower()}@{selected_state.lower()}.gov",
-    "role": selected_role,
+# Construct Resolved Operational Context
+user_context = {
+    "persona_name": selected_persona_name,
+    "username": persona_config["username"],
     "state": selected_state,
-    "unmasked_pii": unmasked_pii,
-    "can_download": can_download,
-    "business_areas": ["Market Regulation", "Company Licensing", "Fraud Investigation"],
+    "business_area": persona_config["business_area"],
+    "can_download": persona_config["can_download"],
+    "unmasked_pii": persona_config["unmasked_pii"],
 }
 
-pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
-download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
+# UI Navigation Header
+pii_badge = '<span class="badge-full">UNMASKED PII</span>' if user_context["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
+download_badge = '<span class="badge-full">DOWNLOAD ALLOWED</span>' if user_context["can_download"] else '<span class="badge-denied">DOWNLOAD RESTRICTED</span>'
 
-# Header Navigation Bar
 st.markdown(
     f"""
     <div class="sdp-nav">
         <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
         <div class="sdp-nav-persona">
-            <span>{current_user['username']}</span> · <span>{current_user['role']}</span> · <span>{current_user['state']}</span> · {pii_badge} {download_badge}
+            <span>{user_context['username']}</span> · <span>Persona: <b>{user_context['persona_name']}</b></span> · <span>Business Area: <b>{user_context['business_area']}</b></span> · <span>Jurisdiction: <b>{user_context['state']}</b></span> · {pii_badge} {download_badge}
         </div>
     </div>
     """,
@@ -366,48 +298,22 @@ st.markdown(
 
 st.title("Document Search & Governance Engine")
 
-# Search Filters Section
-top_row1, top_row2 = st.columns([1, 2])
-with top_row1:
-    selected_ba = st.selectbox(
-        "Business Area",
-        options=current_user["business_areas"],
-        help="Select business area entitlement context.",
-    )
-with top_row2:
+# Search Interface: Business Area is automatically locked to Persona Entitlement
+search_col, button_col = st.columns([3, 1])
+
+with search_col:
     search_query = st.text_input(
-        "Search Term",
-        placeholder="Enter keywords (e.g., accident, Sioux Falls, dispute)...",
+        f"Search within '{user_context['business_area']}' ({user_context['state']} Jurisdiction)",
+        placeholder="Enter keywords (e.g., accident, Mutual, dispute)...",
     )
 
-with st.expander("Advanced Metadata Filters", expanded=True):
-    f_col1, f_col2, f_col3 = st.columns(3)
-    with f_col1:
-        f_case_type = st.text_input("Case Type Filter")
-        f_status = st.text_input("Case Status Filter")
-        f_tracking = st.text_input("Tracking ID")
-    with f_col2:
-        f_investigator = st.text_input("Investigator")
-        f_entity = st.text_input("Entity Name")
-        f_naic = st.text_input("NAIC Group Number")
-    with f_col3:
-        f_subtype = st.text_input("Case Subtype")
-        f_loi = st.text_input("Line of Insurance (LOI)")
+with button_col:
+    st.markdown("<div style='margin-top: 28px;'></div>", unsafe_allow_html=True)
+    execute_click = st.button("Execute Search", type="primary", use_container_width=True)
 
-filters = {
-    "case_type": f_case_type or None,
-    "status": f_status or None,
-    "investigator": f_investigator or None,
-    "entity": f_entity or None,
-    "tracking_id": f_tracking or None,
-    "naic_group": f_naic or None,
-    "case_subtype": f_subtype or None,
-    "loi": f_loi or None,
-}
-
-if st.button("Execute Search", type="primary"):
-    st.session_state.search_results = run_search(current_user, search_query, selected_ba, filters)
-    st.session_state.current_payload = build_search_payload(current_user, search_query, selected_ba, filters)
+if execute_click:
+    st.session_state.search_results = run_search(user_context, search_query)
+    st.session_state.current_payload = build_search_payload(user_context, search_query)
 
 # ==============================================================================
 # SEARCH RESULTS RENDERING
@@ -417,18 +323,11 @@ if st.session_state.search_results is not None:
     st.subheader(f"Search Results ({len(results)} matches found)")
 
     if not results:
-        st.info("No documents match your search criteria or entitlement boundary.")
+        st.info(f"No documents match your search query under the '{user_context['business_area']}' boundary in state {user_context['state']}.")
     else:
-        # 1. Summary Data Table
+        # Table Summary View
         df_data = []
         for r in results:
-            if current_user["can_download"]:
-                url = get_download_url(current_user, r["_doc"])
-                status = "✅ Allowed"
-            else:
-                url = None
-                status = "🚫 Restricted"
-
             df_data.append({
                 "DOC_ID": r["DOC_ID"],
                 "Title": r["DOCUMENT_TITLE"],
@@ -438,24 +337,17 @@ if st.session_state.search_results is not None:
                 "State": r["STATE"],
                 "Investigator": r["INVESTIGATOR_DISPLAY"],
                 "Entity": r["ENTITY_NAME_DISPLAY"],
-                "Access Status": status,
-                "Download Link": url,
+                "Access": "✅ Allowed" if r["CAN_DOWNLOAD"] else "🚫 Restricted",
+                "Action": f"https://your-api-gateway.state.gov/api/v1/download/{r['DOC_ID']}" if r["CAN_DOWNLOAD"] else None,
             })
             
-        df = pd.DataFrame(df_data)
-
         st.dataframe(
-            df,
+            pd.DataFrame(df_data),
             column_config={
-                "Access Status": st.column_config.TextColumn(
-                    "Access",
-                    help="Authorization state",
-                    width="small",
-                ),
-                "Download Link": st.column_config.LinkColumn(
+                "Access": st.column_config.TextColumn("Access", width="small"),
+                "Action": st.column_config.LinkColumn(
                     "Action",
                     help="Authorized direct document download link",
-                    validate="^https://",
                     display_text="Download File",
                 ),
             },
@@ -465,36 +357,22 @@ if st.session_state.search_results is not None:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
-        # 2. Detailed Document Accordion List
+        # Document Accordion View
         for r in results:
-            doc_id = r["DOC_ID"]
-            title = r["DOCUMENT_TITLE"]
-            dtype = r["DOCUMENT_TYPE"]
-            date = r["DOCUMENT_DATE"]
-            ba = r["BUSINESS_AREA"]
-            state = r["STATE"]
-            
-            if not current_user["can_download"]:
-                acc_badge = '<span class="badge-denied">RESTRICTED</span>'
-            else:
-                acc_badge = '<span class="badge-full">ACCESSIBLE</span>'
-
-            header_label = f"{title}  |  {doc_id} · {dtype} · {date} · {ba} · {state}"
-            
+            header_label = f"{r['DOCUMENT_TITLE']}  |  {r['DOC_ID']} · {r['DOCUMENT_TYPE']} · {r['DOCUMENT_DATE']} · {r['BUSINESS_AREA']} · {r['STATE']}"
             with st.expander(header_label, expanded=False):
                 col_info, col_snip = st.columns([1, 1])
                 with col_info:
                     st.markdown(
                         f"""
                         <div class="meta-section">
-                            <div class="meta-row"><span class="meta-label">Title:</span> {escape(title)}</div>
-                            <div class="meta-row"><span class="meta-label">Type:</span> {escape(dtype)}</div>
-                            <div class="meta-row"><span class="meta-label">Upload Date:</span> {escape(date)}</div>
-                            <div class="meta-row"><span class="meta-label">Business Area:</span> {escape(ba)}</div>
-                            <div class="meta-row"><span class="meta-label">State:</span> {escape(state)}</div>
+                            <div class="meta-row"><span class="meta-label">Title:</span> {escape(r['DOCUMENT_TITLE'])}</div>
+                            <div class="meta-row"><span class="meta-label">Type:</span> {escape(r['DOCUMENT_TYPE'])}</div>
+                            <div class="meta-row"><span class="meta-label">Upload Date:</span> {escape(r['DOCUMENT_DATE'])}</div>
+                            <div class="meta-row"><span class="meta-label">Business Area:</span> {escape(r['BUSINESS_AREA'])}</div>
+                            <div class="meta-row"><span class="meta-label">State:</span> {escape(r['STATE'])}</div>
                             <div class="meta-row"><span class="meta-label">Investigator:</span> {escape(r['INVESTIGATOR_DISPLAY'])}</div>
                             <div class="meta-row"><span class="meta-label">Entity:</span> {escape(r['ENTITY_NAME_DISPLAY'])}</div>
-                            <div class="meta-row"><span class="meta-label">Status:</span> {acc_badge}</div>
                         </div>
                         """,
                         unsafe_allow_html=True
@@ -502,7 +380,7 @@ if st.session_state.search_results is not None:
                 with col_snip:
                     st.markdown("**Snippet Context**")
                     st.markdown(
-                        f"""<div style="background:#f9f9f9; padding:12px; border-radius:4px; border-left:3px solid #3f51b5; font-style:italic;">{r['SNIPPET']}</div>""",
+                        f"""<div style="background:#f9f9f9; padding:12px; border-radius:4px; border-left:3px solid #1E3A8A; font-style:italic;">{r['SNIPPET']}</div>""",
                         unsafe_allow_html=True
                     )
 
@@ -515,18 +393,18 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
     if st.session_state.current_payload:
         st.json(st.session_state.current_payload)
     else:
-        st.info("Execute a search to view backend payload filters and Snowflake Cortex parameters.")
+        st.info("Execute a search query to generate active Cortex payloads and inspect entitlement parameters.")
 
 with st.expander("🧪 Security Test Scenarios", expanded=False):
     st.markdown("""
-    - **State Isolation**: Switch state to verify cross-jurisdiction boundaries.
-    - **Role Privileges**: Switch between **REGULATOR** (Download Allowed) and **ANALYST** (Download Denied).
-    - **PII Enforcement**: Toggle **Unmask PII** to verify inline regex masking of SSN, Email, and Company Entities.
+    - **Persona Entitlement Locks**: Select **Fraud Unit Investigator** to lock queries to *Fraud Investigation* with unmasked PII. Switch to **General Compliance Analyst** to see *Market Regulation* boundaries with masked PII.
+    - **State Cross-Jurisdiction**: Toggle the **State Override** dropdown between **SD** and **ID** independently without resetting the active Persona profile.
+    - **Audit Traceability**: Observe the full username signature in the navigation header (e.g., `fraud_investigator@state.gov`).
     """)
 
 with st.expander("📐 Architecture / Data Flow", expanded=False):
     st.markdown("""
-    1. **UI & Entitlement Boundary**: Streamlit captures role, state, and business area context.
-    2. **Middle Tier Authorization**: Enforces role restrictions before generating direct S3/Gateway URLs.
-    3. **Snowflake Cortex Engine**: Queries vectorized document data filtered strictly by `DOC_STATE` and `BUSINESS_AREA`.
+    1. **Persona Authentication**: User persona locks down entitlement boundaries (`Business Area`, PII masking policy, download capabilities).
+    2. **State Override Layer**: Allows inspectors and analysts to dynamically execute cross-jurisdictional queries without altering core rights.
+    3. **Snowflake Cortex Engine**: Restricts data retrieval using combined filters: `DOC_STATE` + `BUSINESS_AREA`.
     """)
