@@ -757,6 +757,7 @@ if st.session_state.search_results is not None:
                             <div class="meta-row"><span class="meta-label">Case Type:</span> {case['CASE_TYPE']}</div>
                             <div class="meta-row"><span class="meta-label">Status:</span> {case['CASE_STATUS']}</div>
                             <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
+                                                        <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
                             <div class="meta-row"><span class="meta-label">Secondary Investigator:</span> {case.get('SECONDARY_INVESTIGATOR') or 'None'}</div>
                             <div class="meta-row"><span class="meta-label">Entity:</span> {r['ENTITY_NAME_DISPLAY']}</div>
                             <div class="meta-row"><span class="meta-label">LOI:</span> {r['LOI_DISPLAY']}</div>
@@ -783,7 +784,6 @@ if st.session_state.search_results is not None:
 
             st.markdown("---")
 
-            # --------------------------------------------------------------
 # ==============================================================================
 # 🛠 Governance / Integration Inspector
 # ==============================================================================
@@ -839,7 +839,6 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
             },
         })
 
-
 # ==============================================================================
 # 🧪 Security Test Scenarios
 # ==============================================================================
@@ -848,44 +847,15 @@ with st.expander("🧪 Security Test Scenarios", expanded=False):
     st.markdown("""
 ### Persona-Based Security Demonstrations
 
-1. **SD Regulator**  
-   - Full metadata  
-   - Full PII  
-   - Download enabled  
-   - All business areas
-
-2. **SD Analyst**  
-   - Masked PII  
-   - Exams only  
-   - Download allowed  
-   - No access to Market Regulation or Complaints
-
-3. **ID Analyst**  
-   - Masked PII  
-   - Exams only  
-   - Download disabled  
-   - No access to SD documents
-
-4. **State Isolation**  
-   - DOC_STATE must match authenticated user  
-   - Cross-state access is denied
-
-5. **Business-Area Isolation**  
-   - Only entitled business areas returned  
-   - Cortex filter enforces entitlement
-
-6. **PII Masking**  
-   - Entity, investigator, filenames masked unless regulator
-
-7. **Raw Access Control**  
-   - Download independently authorized  
-   - Case type restrictions enforced
-
-8. **Payload Control**  
-   - Backend selects fields  
-   - UI cannot override authorization
+1. **SD Regulator** — full metadata, full PII, download enabled  
+2. **SD Analyst** — masked PII, Exams only  
+3. **ID Analyst** — masked PII, Exams only, download disabled  
+4. **State Isolation** — DOC_STATE must match authenticated user  
+5. **Business-Area Isolation** — only entitled business areas  
+6. **PII Masking** — entity, investigator, filenames masked  
+7. **Raw Access Control** — download independently authorized  
+8. **Payload Control** — backend selects fields, UI cannot override
 """)
-
 
 # ==============================================================================
 # 📐 Architecture / Data Flow
@@ -899,36 +869,16 @@ with st.expander("📐 Architecture / Data Flow", expanded=False):
 
 ### Key Architecture Notes
 
-- **DOC_SEARCH_CONTENT**  
-  Document-owned metadata + parsed text + extraction confidence.
-
-- **SBS.ATTACHMENT**  
-  File-level metadata, upload user, timestamps.
-
-- **MR_CASE / SBS_CASES**  
-  Case-level metadata, investigators, LOI, NAIC group.
-
-- **Authorization Boundary**  
-  Spring Boot enforces:
-  - State isolation  
-  - Business-area entitlement  
-  - PII masking  
-  - Download permissions
-
-- **Cortex Search**  
-  Performs text search only on allowed fields.  
-  Does **not** enforce authorization — backend does.
-
-- **UI**  
-  Displays permitted representation only.  
-  Cannot request raw fields or override masking.
+- **DOC_SEARCH_CONTENT** — parsed text + extraction confidence  
+- **SBS.ATTACHMENT** — upload metadata  
+- **MR_CASE** — case metadata  
+- **Authorization Boundary** — Spring Boot enforces entitlement + masking  
+- **Cortex Search** — text search only, no authorization  
+- **UI** — displays permitted representation only
 """)
-
 
 # ==============================================================================
 # END OF FILE
 # ==============================================================================
 
 st.markdown("<br><br><center><small>Smart Document Platform — Prototype Build</small></center>", unsafe_allow_html=True)
-
-
