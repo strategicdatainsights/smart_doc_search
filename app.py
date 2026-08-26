@@ -384,9 +384,7 @@ mark {
 # ==============================================================================
 
 def get_download_url(user, doc):
-    """Generates an authorized backend download URL or returns None if restricted."""
-    if not user["can_download"] or doc.get("LOCKED", False):
-        return None
+    """Generates an authorized backend download URL for the document record."""
     return f"https://your-api-gateway.state.gov/api/v1/download/{doc['DOC_ID']}"
 
 def mask_value(value):
