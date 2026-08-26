@@ -637,7 +637,6 @@ if st.button("Execute Search", type="primary"):
 # ==============================================================================
 # SEARCH RESULTS RENDERING
 # ==============================================================================
-
 if st.session_state.search_results is not None:
     results = st.session_state.search_results
     st.subheader(f"Search Results ({len(results)} matches found)")
