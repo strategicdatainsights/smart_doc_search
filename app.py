@@ -45,7 +45,7 @@ USERS = {
 
 # ==============================================================================
 # SNOWFLAKE-READY MOCK TABLES
-# DOC_SEARCH_CONTENT (document-owned), SBS.ATTACHMENT, MR_CASE
+# DOC_SEARCH_CONTENT, SBS.ATTACHMENT, MR_CASE
 # ==============================================================================
 
 DOC_SEARCH_CONTENT = [
@@ -295,6 +295,10 @@ FIELD_MATRIX = {
     "Exams": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
 }
 
+# ==============================================================================
+# CSS (NEW ACCORDION STYLE)
+# ==============================================================================
+
 st.markdown("""
 <style>
 html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
@@ -387,6 +391,10 @@ html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSyst
 </style>
 """, unsafe_allow_html=True)
 
+# ==============================================================================
+# BACKEND SIMULATION (MASKING, AUTHORIZATION, SEARCH)
+# ==============================================================================
+
 def mask_value(value):
     if not value:
         return value
@@ -409,8 +417,7 @@ def mask_text(text, entity_name=None):
     if entity_name:
         text = re.sub(re.escape(entity_name), mask_value(entity_name), text)
     text = re.sub(r"\b[\w.+-]+@[\w.-]+\.\w+\b", "[EMAIL MASKED]", text)
-    text = re.sub(r"\b(?:\d{3}[-.\s]){2}\d{4}\b", "[PHONE MASKED]", text)
-    text = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "***-**-****", text)
+        text = re.sub(r"\b(?:\d{3}-\d{2}-\d{4})\b", "***-**-****", text)
     return text
 
 def authorized_documents(user, selected_ba):
@@ -472,6 +479,7 @@ def run_search(user, query, selected_ba, filters):
             if not all(term in haystack for term in terms):
                 continue
 
+        # Apply filters
         if filters.get("case_type") and case["CASE_TYPE"] != filters["case_type"]:
             continue
         if filters.get("status") and case["CASE_STATUS"] != filters["status"]:
@@ -496,6 +504,7 @@ def run_search(user, query, selected_ba, filters):
         if filters.get("loi") and case["LOI"] != filters["loi"]:
             continue
 
+        # Masking
         if user["unmasked_pii"]:
             display_file_name = attachment["FILE_NAME"]
             display_entity = case["ENTITY_NAME"]
@@ -507,6 +516,7 @@ def run_search(user, query, selected_ba, filters):
             display_investigator = mask_value(case["INVESTIGATOR"])
             snippet = mask_text(d["CONTENT_TEXT"], entity_name=case["ENTITY_NAME"])
 
+        # Highlight terms
         if q:
             for term in q.split():
                 snippet = re.sub(
@@ -540,106 +550,6 @@ def run_search(user, query, selected_ba, filters):
         })
 
     return results
-
-def download_document(user, doc_row, case_row):
-    CONFIDENTIAL_CASE_TYPES = {
-        "Enforcement",
-        "Market Conduct Exams",
-        "Investigations",
-        "Multi-State",
-        "Securities",
-        "PBM",
-        "Fraud",
-    }
-    case_type = case_row["CASE_TYPE"]
-
-    if user["role"] != "STATE_REGULATOR" and case_type in CONFIDENTIAL_CASE_TYPES:
-        return False, "Download denied: confidential case type requires regulator access."
-    if not user["can_download"]:
-        return False, "Download denied by authorization policy."
-    if doc_row["DOC_STATE"] != user["state"]:
-        return False, "Download denied: jurisdiction mismatch."
-    if doc_row["BUSINESS_AREA"] not in user["business_areas"]:
-        return False, "Download denied: business-area entitlement."
-    return True, f"Authorized download: {doc_row['DOC_ID']} / {doc_row['FILE_PATH']}"
-
-def accordion_result_card(r, user):
-    content_id = f"acc_content_{r['DOC_ID']}"
-    header_html = f"""
-    <div class="accordion">
-      <div class="accordion-header" onclick="
-        var c = document.getElementById('{content_id}');
-        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-      ">
-        <div class="accordion-header-left">
-          <div class="accordion-header-main">
-            DOC_ID: {r['DOC_ID']} · Tracking ID: {r['TRACKING_ID']}
-          </div>
-          <div class="accordion-header-sub">
-            {escape(r['DOCUMENT_TITLE'])}
-          </div>
-          <div class="accordion-header-sub">
-            <span class="sdp-snippet">\"{r['SNIPPET']}\"</span>
-          </div>
-        </div>
-        <div class="accordion-header-right">
-    """
-
-    if r["CAN_DOWNLOAD"]:
-        header_html += f"""<span class="badge-full">DOWNLOAD ENABLED</span>"""
-    else:
-        header_html += """<span class="badge-denied">RESTRICTED</span>"""
-
-    header_html += """
-        </div>
-      </div>
-    """
-
-    body_html = f"""
-      <div class="accordion-content" id="{content_id}">
-        <div class="meta-section">
-          <h4>Document Metadata</h4>
-          <div class="meta-row"><span class="meta-label">DOC_ID:</span> {r['DOC_ID']}</div>
-          <div class="meta-row"><span class="meta-label">Title:</span> {escape(r['DOCUMENT_TITLE'])}</div>
-          <div class="meta-row"><span class="meta-label">Type:</span> {r['DOCUMENT_TYPE']}</div>
-          <div class="meta-row"><span class="meta-label">Date:</span> {r['DOCUMENT_DATE']}</div>
-          <div class="meta-row"><span class="meta-label">State:</span> {r['STATE']}</div>
-          <div class="meta-row"><span class="meta-label">Business Area:</span> {r['BUSINESS_AREA']}</div>
-          <div class="meta-row"><span class="meta-label">Locked:</span> {r['LOCKED']}</div>
-        </div>
-
-        <div class="meta-section">
-          <h4>Attachment Metadata</h4>
-          <div class="meta-row"><span class="meta-label">Attachment ID:</span> {r['ATTACHMENT_ID']}</div>
-          <div class="meta-row"><span class="meta-label">Tracking ID:</span> {r['TRACKING_ID']}</div>
-          <div class="meta-row"><span class="meta-label">File Name:</span> {escape(r['FILE_NAME'])}</div>
-          <div class="meta-row"><span class="meta-label">Attachment Type:</span> {SBS_ATTACHMENTS[r['ATTACHMENT_ID']]['ATTACHMENT_TYPE']}</div>
-          <div class="meta-row"><span class="meta-label">Upload User:</span> {SBS_ATTACHMENTS[r['ATTACHMENT_ID']]['UPLOAD_USER']}</div>
-          <div class="meta-row"><span class="meta-label">Upload Timestamp:</span> {SBS_ATTACHMENTS[r['ATTACHMENT_ID']]['UPLOAD_TIMESTAMP']}</div>
-        </div>
-
-        <div class="meta-section">
-          <h4>Case Metadata</h4>
-          <div class="meta-row"><span class="meta-label">Case Type:</span> {r['CASE_TYPE']}</div>
-          <div class="meta-row"><span class="meta-label">Status:</span> {r['CASE_STATUS']}</div>
-          <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
-          <div class="meta-row"><span class="meta-label">Entity:</span> {r['ENTITY_NAME_DISPLAY']}</div>
-          <div class="meta-row"><span class="meta-label">LOI:</span> {r['LOI_DISPLAY']}</div>
-          <div class="meta-row"><span class="meta-label">Case Subtype:</span> {SBS_CASES[r['TRACKING_ID']]['CASE_SUBTYPE']}</div>
-          <div class="meta-row"><span class="meta-label">NAIC Group:</span> {SBS_CASES[r['TRACKING_ID']]['NAIC_GROUP_NUMBER']}</div>
-        </div>
-
-        <div class="meta-section">
-          <h4>Raw Payload</h4>
-          <div class="meta-row"><span class="meta-label">Document ID:</span> {r['DOC_ID']}</div>
-          <div class="meta-row"><span class="meta-label">Content Hash:</span> {r['_doc']['CONTENT_HASH']}</div>
-          <div class="meta-row"><span class="meta-label">MIME Type:</span> {r['_doc']['MIME_TYPE']}</div>
-        </div>
-      </div>
-    </div>
-    """
-    return header_html + body_html
-
 # ==============================================================================
 # MAIN APPLICATION & USER INTERFACE
 # ==============================================================================
@@ -651,6 +561,7 @@ if "search_results" not in st.session_state:
 if "current_payload" not in st.session_state:
     st.session_state.current_payload = None
 
+# Sidebar Governance Persona Selector
 st.sidebar.title("Security Governance")
 selected_user_key = st.sidebar.selectbox(
     "Active Persona",
@@ -670,6 +581,7 @@ st.sidebar.markdown(f"**Download Permission:** {current_user['can_download']}")
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
 download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
 
+# Top Navigation Bar
 st.markdown(
     f"""
     <div class="sdp-nav">
@@ -684,20 +596,22 @@ st.markdown(
 
 st.title("Document Search & Governance Engine")
 
-col1, col2 = st.columns([1, 2])
-with col1:
+# Search UI — Business Area + Query
+top_row1, top_row2 = st.columns([2, 2])
+with top_row1:
     selected_ba = st.selectbox(
         "Business Area",
         options=current_user["business_areas"],
         help="Select business area entitlement context.",
     )
-with col2:
+with top_row2:
     search_query = st.text_input(
         "Search Term",
         placeholder="Enter keywords (e.g., accident, Sioux Falls, dispute)...",
     )
 
-with st.expander("Advanced Metadata Filters"):
+# Advanced Filters
+with st.expander("Advanced Metadata Filters", expanded=True):
     f_col1, f_col2, f_col3 = st.columns(3)
     with f_col1:
         f_case_type = st.text_input("Case Type Filter")
@@ -722,30 +636,299 @@ filters = {
     "loi": f_loi or None,
 }
 
+# Execute Search
 if st.button("Execute Search", type="primary"):
     st.session_state.search_results = run_search(current_user, search_query, selected_ba, filters)
     st.session_state.current_payload = build_search_payload(current_user, search_query, selected_ba, filters)
 
+# Cortex Payload Viewer
 if st.session_state.current_payload:
     with st.expander("🔍 View Generated Cortex Search Payload (JSON)"):
         st.json(st.session_state.current_payload)
+# ==============================================================================
+# SEARCH RESULTS — SINGLE ACCORDION + THREE OLD ACCORDIONS
+# ==============================================================================
 
 if st.session_state.search_results is not None:
     results = st.session_state.search_results
     st.subheader(f"Search Results ({len(results)} matches found)")
+
     if not results:
         st.info("No documents match your search criteria or entitlement boundary.")
+
     else:
-        for idx, res in enumerate(results):
-            card_html = accordion_result_card(res, current_user)
+        for idx, r in enumerate(results):
+
+            # --------------------------------------------------------------
+            # 1) NEW SINGLE ACCORDION CARD (accordion_result_card)
+            # --------------------------------------------------------------
+            card_html = accordion_result_card(r, current_user)
             st.markdown(card_html, unsafe_allow_html=True)
 
+            # --------------------------------------------------------------
+            # 2) OLD THREE ACCORDIONS (Document / Attachment / Case)
+            # --------------------------------------------------------------
+
+            # Document Metadata Accordion
+            doc_acc_id = f"doc_acc_{r['DOC_ID']}"
+            st.markdown(
+                f"""
+                <div class="accordion">
+                    <div class="accordion-header" onclick="
+                        var c = document.getElementById('{doc_acc_id}');
+                        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
+                    ">
+                        <div class="accordion-header-left">
+                            <div class="accordion-header-main">Document Metadata</div>
+                            <div class="accordion-header-sub">DOC_ID: {r['DOC_ID']}</div>
+                        </div>
+                    </div>
+                    <div class="accordion-content" id="{doc_acc_id}">
+                        <div class="meta-section">
+                            <div class="meta-row"><span class="meta-label">DOC_ID:</span> {r['_doc']['DOC_ID']}</div>
+                            <div class="meta-row"><span class="meta-label">Title:</span> {escape(r['DOCUMENT_TITLE'])}</div>
+                            <div class="meta-row"><span class="meta-label">Type:</span> {r['DOCUMENT_TYPE']}</div>
+                            <div class="meta-row"><span class="meta-label">Upload Date:</span> {r['DOCUMENT_DATE']}</div>
+                            <div class="meta-row"><span class="meta-label">State:</span> {r['STATE']}</div>
+                            <div class="meta-row"><span class="meta-label">Business Area:</span> {r['BUSINESS_AREA']}</div>
+                            <div class="meta-row"><span class="meta-label">Locked:</span> {r['LOCKED']}</div>
+                            <div class="meta-row"><span class="meta-label">Content Hash:</span> {r['_doc']['CONTENT_HASH']}</div>
+                            <div class="meta-row"><span class="meta-label">File Path:</span> {r['_doc']['FILE_PATH']}</div>
+                            <div class="meta-row"><span class="meta-label">Page Count:</span> {r['_doc']['PAGE_COUNT']}</div>
+                            <div class="meta-row"><span class="meta-label">MIME Type:</span> {r['_doc']['MIME_TYPE']}</div>
+                            <div class="meta-row"><span class="meta-label">Language:</span> {r['_doc']['LANGUAGE']}</div>
+                            <div class="meta-row"><span class="meta-label">Extraction Confidence:</span> {r['_doc']['EXTRACTION_CONFIDENCE']}</div>
+                            <div class="meta-row"><span class="meta-label">Topics:</span> {", ".join(r['_doc']['TOPICS'])}</div>
+                            <div class="meta-row"><span class="meta-label">Key Phrases:</span> {", ".join(r['_doc']['KEY_PHRASES'])}</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # Attachment Metadata Accordion
+            att_acc_id = f"att_acc_{r['DOC_ID']}"
+            att = r["_attachment"]
+            st.markdown(
+                f"""
+                <div class="accordion">
+                    <div class="accordion-header" onclick="
+                        var c = document.getElementById('{att_acc_id}');
+                        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
+                    ">
+                        <div class="accordion-header-left">
+                            <div class="accordion-header-main">Attachment Metadata</div>
+                            <div class="accordion-header-sub">Attachment ID: {r['ATTACHMENT_ID']}</div>
+                        </div>
+                    </div>
+                    <div class="accordion-content" id="{att_acc_id}">
+                        <div class="meta-section">
+                            <div class="meta-row"><span class="meta-label">Attachment ID:</span> {r['ATTACHMENT_ID']}</div>
+                            <div class="meta-row"><span class="meta-label">Tracking ID:</span> {r['TRACKING_ID']}</div>
+                            <div class="meta-row"><span class="meta-label">File Name:</span> {escape(r['FILE_NAME'])}</div>
+                            <div class="meta-row"><span class="meta-label">Attachment Type:</span> {att['ATTACHMENT_TYPE']}</div>
+                            <div class="meta-row"><span class="meta-label">Upload User:</span> {att['UPLOAD_USER']}</div>
+                            <div class="meta-row"><span class="meta-label">Upload Timestamp:</span> {att['UPLOAD_TIMESTAMP']}</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # Case Metadata Accordion
+            case_acc_id = f"case_acc_{r['DOC_ID']}"
+            case = r["_case"]
+            st.markdown(
+                f"""
+                <div class="accordion">
+                    <div class="accordion-header" onclick="
+                        var c = document.getElementById('{case_acc_id}');
+                        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
+                    ">
+                        <div class="accordion-header-left">
+                            <div class="accordion-header-main">Case Metadata</div>
+                            <div class="accordion-header-sub">Case Type: {case['CASE_TYPE']}</div>
+                        </div>
+                    </div>
+                    <div class="accordion-content" id="{case_acc_id}">
+                        <div class="meta-section">
+                            <div class="meta-row"><span class="meta-label">Case Type:</span> {case['CASE_TYPE']}</div>
+                            <div class="meta-row"><span class="meta-label">Status:</span> {case['CASE_STATUS']}</div>
+                            <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
+                            <div class="meta-row"><span class="meta-label">Secondary Investigator:</span> {case.get('SECONDARY_INVESTIGATOR') or 'None'}</div>
+                            <div class="meta-row"><span class="meta-label">Entity:</span> {r['ENTITY_NAME_DISPLAY']}</div>
+                            <div class="meta-row"><span class="meta-label">LOI:</span> {r['LOI_DISPLAY']}</div>
+                            <div class="meta-row"><span class="meta-label">Case Subtype:</span> {case['CASE_SUBTYPE']}</div>
+                            <div class="meta-row"><span class="meta-label">NAIC Group:</span> {case['NAIC_GROUP_NUMBER']}</div>
+                        </div>
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+            # --------------------------------------------------------------
+            # 3) Download Button
+            # --------------------------------------------------------------
             btn_col1, btn_col2 = st.columns([1, 4])
             with btn_col1:
-                if st.button(f"Download {res['DOC_ID']}", key=f"dl_{res['DOC_ID']}_{idx}"):
-                    allowed, msg = download_document(current_user, res["_doc"], res["_case"])
+                if st.button(f"Download {r['DOC_ID']}", key=f"dl_{r['DOC_ID']}_{idx}"):
+                    allowed, msg = download_document(current_user, r["_doc"], r["_case"])
                     if allowed:
                         st.success(msg)
                     else:
                         st.error(msg)
+
             st.markdown("---")
+
+            # --------------------------------------------------------------
+# ==============================================================================
+# 🛠 Governance / Integration Inspector
+# ==============================================================================
+
+with st.expander("🛠 Governance / Integration Inspector", expanded=False):
+
+    col_g1, col_g2, col_g3 = st.columns(3)
+
+    # Backend Payload
+    with col_g1:
+        st.markdown("### Backend Payload")
+        if st.session_state.current_payload:
+            st.json(st.session_state.current_payload)
+        else:
+            st.info("Run a search to view the generated payload.")
+
+    # Authorization Trace
+    with col_g2:
+        st.markdown("### Authorization Trace")
+        st.json({
+            "authenticated_user": current_user["username"],
+            "role": current_user["role"],
+            "jurisdiction": current_user["jurisdiction"],
+            "enforced_state": current_user["state"],
+            "entitled_business_areas": current_user["business_areas"],
+            "pii_representation": "FULL" if current_user["unmasked_pii"] else "MASKED",
+            "raw_download": current_user["can_download"],
+            "authorization_boundary": "Spring Boot",
+            "cortex_search_is_authorization_boundary": False,
+        })
+
+    # Document Relationship
+    with col_g3:
+        st.markdown("### Document Relationship")
+        st.json({
+            "document": {
+                "DOC_ID": "DOC-10004",
+                "ATTACHMENT_ID": "890786546",
+                "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
+            },
+            "relationship": {
+                "ATTACHMENT_ID": "→ SBS.ATTACHMENT.ATTACHMENT_ID",
+                "TRACKING_ID": "→ MR_CASE.TRACKING_ID",
+                "structured_case_metadata": "→ SBS case tables",
+            },
+            "search_content": {
+                "CONTENT_TEXT": "→ parsed document text",
+            },
+            "governance": {
+                "DOC_STATE": "→ entitlement / jurisdiction",
+                "BUSINESS_AREA": "→ entitlement",
+                "PII": "→ full or search-safe representation via SBS join",
+            },
+        })
+
+
+# ==============================================================================
+# 🧪 Security Test Scenarios
+# ==============================================================================
+
+with st.expander("🧪 Security Test Scenarios", expanded=False):
+    st.markdown("""
+### Persona-Based Security Demonstrations
+
+1. **SD Regulator**  
+   - Full metadata  
+   - Full PII  
+   - Download enabled  
+   - All business areas
+
+2. **SD Analyst**  
+   - Masked PII  
+   - Exams only  
+   - Download allowed  
+   - No access to Market Regulation or Complaints
+
+3. **ID Analyst**  
+   - Masked PII  
+   - Exams only  
+   - Download disabled  
+   - No access to SD documents
+
+4. **State Isolation**  
+   - DOC_STATE must match authenticated user  
+   - Cross-state access is denied
+
+5. **Business-Area Isolation**  
+   - Only entitled business areas returned  
+   - Cortex filter enforces entitlement
+
+6. **PII Masking**  
+   - Entity, investigator, filenames masked unless regulator
+
+7. **Raw Access Control**  
+   - Download independently authorized  
+   - Case type restrictions enforced
+
+8. **Payload Control**  
+   - Backend selects fields  
+   - UI cannot override authorization
+""")
+
+
+# ==============================================================================
+# 📐 Architecture / Data Flow
+# ==============================================================================
+
+with st.expander("📐 Architecture / Data Flow", expanded=False):
+    st.markdown("""
+### End-to-End Pipeline
+
+`S3 → DOC_SEARCH_CONTENT → Spring Boot Authorization → Cortex Search → SBS.ATTACHMENT / MR_CASE Join → UI`
+
+### Key Architecture Notes
+
+- **DOC_SEARCH_CONTENT**  
+  Document-owned metadata + parsed text + extraction confidence.
+
+- **SBS.ATTACHMENT**  
+  File-level metadata, upload user, timestamps.
+
+- **MR_CASE / SBS_CASES**  
+  Case-level metadata, investigators, LOI, NAIC group.
+
+- **Authorization Boundary**  
+  Spring Boot enforces:
+  - State isolation  
+  - Business-area entitlement  
+  - PII masking  
+  - Download permissions
+
+- **Cortex Search**  
+  Performs text search only on allowed fields.  
+  Does **not** enforce authorization — backend does.
+
+- **UI**  
+  Displays permitted representation only.  
+  Cannot request raw fields or override masking.
+""")
+
+
+# ==============================================================================
+# END OF FILE
+# ==============================================================================
+
+st.markdown("<br><br><center><small>Smart Document Platform — Prototype Build</small></center>", unsafe_allow_html=True)
+
+
