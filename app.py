@@ -707,18 +707,18 @@ import pandas as pd
 # MISSING AUTHORIZATION FUNCTION
 # ==============================================================================
 
-def download_document(user, doc, case):
-    """Enforces fine-grained download permissions and document lock status."""
+def get_download_url(user, doc):
+    """Generates an authorized backend download URL or access denial link."""
     if not user["can_download"]:
-        return False, f"Access Denied: User role '{user['role']}' is restricted from downloading raw source files."
-    
+        return "javascript:alert('Access Denied: Download permission restricted.');"
     if doc.get("LOCKED", False):
-        return False, f"Download Restricted: Document {doc['DOC_ID']} is currently locked for regulatory audit."
+        return "javascript:alert('Access Restricted: Document locked for audit.');"
     
-    return True, f"Downloading source file '{doc['FILE_PATH']}' for document {doc['DOC_ID']}..."
+    # Return your backend API endpoint URL passing the DOC_ID / FILE_PATH
+    return f"https://your-api-gateway.state.gov/api/v1/download/{doc['DOC_ID']}"
 
 # ==============================================================================
-# SEARCH RESULTS — TABLE VIEW WITH SINGLE DOWNLOAD CONTROL
+# SEARCH RESULTS — IN-TABLE DOWNLOAD LINKS
 # ==============================================================================
 
 if st.session_state.search_results is not None:
@@ -729,8 +729,8 @@ if st.session_state.search_results is not None:
         st.info("No documents match your search criteria or entitlement boundary.")
 
     else:
-        # Simplified Dataframe (Removed duplicate "Download" column string)
-        df = pd.DataFrame([
+        # Build Dataframe with a dedicated URL column for downloads
+        df_data = [
             {
                 "DOC_ID": r["DOC_ID"],
                 "Title": r["DOCUMENT_TITLE"],
@@ -740,26 +740,28 @@ if st.session_state.search_results is not None:
                 "State": r["STATE"],
                 "Investigator": r["INVESTIGATOR_DISPLAY"],
                 "Entity": r["ENTITY_NAME_DISPLAY"],
-                "Summary": r.get("SUMMARY", ""),
+                "Download Link": get_download_url(current_user, r["_doc"]),
             }
             for r in results
-        ])
+        ]
 
-        st.dataframe(df, use_container_width=True)
+        df = pd.DataFrame(df_data)
 
-        st.subheader("Document Actions")
-
-        # Render explicit download action controls cleanly
-        dl_cols = st.columns(min(len(results), 4))
-        for idx, r in enumerate(results):
-            col_target = dl_cols[idx % 4]
-            with col_target:
-                if st.button(f"📥 Download {r['DOC_ID']}", key=f"dl_{idx}"):
-                    allowed, msg = download_document(current_user, r["_doc"], r["_case"])
-                    if allowed:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
+        # Render dataframe using column configuration for clickable download buttons
+        st.dataframe(
+            df,
+            column_config={
+                "Download Link": st.column_config.LinkColumn(
+                    "Action",
+                    help="Download raw document file",
+                    validate="^https://",
+                    display_text=r"Download (.*)", # Displays "Download DOC-XXXXX" in cell
+                )
+            },
+            use_container_width=True,
+            hide_index=True,
+        )
+        
 # ==============================================================================
 # 🛠 Governance / Integration Inspector
 # ==============================================================================
