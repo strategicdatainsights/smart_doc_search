@@ -843,11 +843,17 @@ if st.session_state.results is not None:
             "SEMANTIC_SCORE",
         ]
         st.markdown("#### Column Picker")
+        valid_options = [c for c in all_columns if c not in ["ATTACHMENT_ID", "TRACKING_ID"]]
+
+        # sanitize defaults so Streamlit doesn't crash
+        default_cols = [c for c in st.session_state.visible_columns if c in valid_options]
+        
         st.session_state.visible_columns = st.multiselect(
             "Visible Columns (Attachment ID and Tracking ID are always shown)",
-            options=[c for c in all_columns if c not in ["ATTACHMENT_ID", "TRACKING_ID"]],
-            default=st.session_state.visible_columns,
+            options=valid_options,
+            default=default_cols,
         )
+
 
         table_html = "<table class='results-table'><thead><tr>"
         table_html += "<th>Attachment ID</th><th>Tracking ID</th>"
