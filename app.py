@@ -3,6 +3,10 @@ import re
 from html import escape
 from datetime import date
 
+# ==============================================================================
+# PAGE CONFIG
+# ==============================================================================
+
 st.set_page_config(
     page_title="Smart Document Platform — SD / ID",
     page_icon="📄",
@@ -48,7 +52,7 @@ USERS = {
 }
 
 # ==============================================================================
-# MOCK DATA: DOC_SEARCH_CONTENT, SBS_ATTACHMENTS, SBS_CASES
+# MOCK DATA (STAND-IN FOR SBS JOINED VIEW)
 # ==============================================================================
 
 DOC_SEARCH_CONTENT = [
@@ -365,11 +369,6 @@ html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSyst
 .results-table tr:hover {
     background:#fafafa;
 }
-.tracking-link {
-    color:#1e88e5;
-    text-decoration:underline;
-    cursor:pointer;
-}
 .actions-btn {
     display:inline-block;
     padding:3px 8px;
@@ -419,38 +418,24 @@ def mask_text(text, entity_name=None):
     text = re.sub(r"\b[\w.+-]+@[\w.-]+\.\w+\b", "[EMAIL MASKED]", text)
     return text
 
-def authorized_documents(user, selected_ba):
-    docs = [
-        d for d in DOC_SEARCH_CONTENT
-        if d["DOC_STATE"] == user["state"]
-        and d["BUSINESS_AREA"] == selected_ba
-        and selected_ba in user["business_areas"]
-        and d["IS_CURRENT"]
-    ]
-    filtered = []
-    for d in docs:
-        attachment = SBS_ATTACHMENTS.get(d["ATTACHMENT_ID"])
-        if not attachment:
-            continue
-        case = SBS_CASES.get(attachment["TRACKING_ID"])
-        if not case:
-            continue
-        if not has_dual_auth(user, case):
-            continue
-        filtered.append(d)
-    return filtered
+# ==============================================================================
+# SNOWFLAKE / CORTEX SEARCH STUBS (READY FOR REAL WIRING)
+# ==============================================================================
 
 def build_search_payload(user, query, selected_ba, filters):
     columns = [
         "DOC_ID",
-        "TRACKING_ID",
-        "FILE_NAME",
+        "ATTACHMENT_ID",
         "DOC_TITLE",
         "DOC_TYPE",
         "DOC_DATE",
         "BUSINESS_AREA",
         "DOC_STATE",
         "CONTENT_TEXT",
+        "UPLOAD_DATE",
+        "HAS_PII",
+        "LOCKED",
+        "FILE_PATH",
     ]
     cortex_filter = {
         "@and": [
@@ -463,22 +448,61 @@ def build_search_payload(user, query, selected_ba, filters):
         "query": query,
         "columns": columns,
         "filter": cortex_filter,
-        "limit": 10,
+        "limit": 50,
     }
 
-def run_search(user, query, selected_ba, filters, date_filters):
-    docs = authorized_documents(user, selected_ba)
-    q = query.strip().lower()
-    results = []
+def cortex_search(payload):
+    """
+    Snowflake-ready stub.
 
-    for d in docs:
+    Replace this with actual Snowflake Cortex Search call, e.g.:
+
+        import snowflake.connector
+        from snowflake.cortex import SearchClient
+
+        client = SearchClient(...)
+        return client.search(payload)
+
+    For now, we simulate by returning DOC_SEARCH_CONTENT.
+    """
+    return DOC_SEARCH_CONTENT
+
+def merge_with_sbs(cortex_rows):
+    """
+    Join Cortex results with SBS attachments and SBS cases.
+    This is where Spring Boot would normally do the join.
+    """
+    merged = []
+    for d in cortex_rows:
         attachment = SBS_ATTACHMENTS.get(d["ATTACHMENT_ID"])
         if not attachment:
             continue
         case = SBS_CASES.get(attachment["TRACKING_ID"])
         if not case:
             continue
+        merged.append((d, attachment, case))
+    return merged
 
+def apply_entitlement_and_masking(user, merged_rows, query, filters, date_filters):
+    """
+    Apply dual auth, jurisdiction, business area, masking, and UI filters
+    AFTER Cortex Search, matching the real architecture.
+    """
+    q = query.strip().lower()
+    results = []
+
+    for d, attachment, case in merged_rows:
+        # Dual auth
+        if not has_dual_auth(user, case):
+            continue
+
+        # Jurisdiction & business area (already enforced in payload, but double-check)
+        if d["DOC_STATE"] != user["state"]:
+            continue
+        if d["BUSINESS_AREA"] not in user["business_areas"]:
+            continue
+
+        # Date filters
         def within_range(field_name, drange):
             if not drange or not drange[0] or not drange[1]:
                 return True
@@ -500,6 +524,7 @@ def run_search(user, query, selected_ba, filters, date_filters):
         if not within_range("UPLOAD_DATE", date_filters.get("file_upload")):
             continue
 
+        # Semantic + structured haystack
         haystack_parts = [
             d["CONTENT_TEXT"],
             d.get("DOC_TITLE", ""),
@@ -520,6 +545,7 @@ def run_search(user, query, selected_ba, filters, date_filters):
             if not all(term in haystack for term in terms):
                 continue
 
+        # UI filters (post-search)
         if filters.get("case_type") and case["CASE_TYPE"] != filters["case_type"]:
             continue
         if filters.get("status") and case["CASE_STATUS"] != filters["status"]:
@@ -545,6 +571,7 @@ def run_search(user, query, selected_ba, filters, date_filters):
             if not any(loi_q in item.lower() for item in loi_list):
                 continue
 
+        # Masking
         if user["unmasked_pii"]:
             display_file_name = attachment["FILE_NAME"]
             display_entity = case["ENTITY_NAME"]
@@ -556,6 +583,7 @@ def run_search(user, query, selected_ba, filters, date_filters):
             display_investigator = mask_value(case["INVESTIGATOR"])
             snippet = mask_text(d["CONTENT_TEXT"], entity_name=case["ENTITY_NAME"])
 
+        # Highlight terms
         if q:
             for term in q.split():
                 snippet = re.sub(
@@ -620,6 +648,7 @@ def download_document(user, doc_row, case_row):
         return False, "Download denied: jurisdiction mismatch."
     if doc_row["BUSINESS_AREA"] not in user["business_areas"]:
         return False, "Download denied: business-area entitlement."
+    # In real wiring, return presigned URL from backend here.
     return True, f"Authorized download: {doc_row['DOC_ID']} / {doc_row['FILE_PATH']}"
 
 # ==============================================================================
@@ -671,11 +700,9 @@ with top_right:
 st.markdown("### Search Criteria")
 
 with st.form(key="search_form"):
-    # Business Area (required)
     st.markdown("**Business Area** *")
     business_area = st.selectbox("", user["business_areas"])
 
-    # Search Document Contents (required)
     st.markdown("**Search Document Contents** *")
     query = st.text_area(
         "",
@@ -684,7 +711,6 @@ with st.form(key="search_form"):
     )
     st.caption("Search within the text of all attached documents.")
 
-    # Case Details (collapsed by default)
     with st.expander("Case Details", expanded=False):
         c1, c2 = st.columns(2)
         with c1:
@@ -695,12 +721,10 @@ with st.form(key="search_form"):
             st.caption("Searches Primary and Secondary investigators.")
             status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
 
-    # Entity (collapsed)
     with st.expander("Entity", expanded=False):
         entity = st.text_input("Entity Name", placeholder="John Doe")
         naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
 
-    # Dates (collapsed)
     with st.expander("Dates", expanded=False):
         dc1, dc2 = st.columns(2)
         with dc1:
@@ -714,7 +738,6 @@ with st.form(key="search_form"):
             file_upload_from = st.date_input("File Upload From", value=None)
             file_upload_to = st.date_input("File Upload To", value=None)
 
-    # Document (collapsed)
     with st.expander("Document", expanded=False):
         d1, d2 = st.columns(2)
         with d1:
@@ -723,7 +746,6 @@ with st.form(key="search_form"):
         with d2:
             case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
 
-    # Additional Details (collapsed)
     with st.expander("Additional Details", expanded=False):
         ad1, ad2 = st.columns(2)
         with ad1:
@@ -734,7 +756,6 @@ with st.form(key="search_form"):
         with ad2:
             reason = st.selectbox("Reason", ["", "Accident", "Complaint", "Exam", "Dispute"])
 
-    # Coverage & LOI (collapsed)
     with st.expander("Coverage & LOI", expanded=False):
         lo1, lo2 = st.columns(2)
         with lo1:
@@ -780,8 +801,12 @@ if search_clicked:
             "reason": reason or None,
             "disposition": disposition or None,
         }
-        st.session_state.results = run_search(user, query, business_area, filters, date_filters)
-        st.session_state.payload = build_search_payload(user, query, business_area, filters)
+        payload = build_search_payload(user, query, business_area, filters)
+        cortex_rows = cortex_search(payload)
+        merged_rows = merge_with_sbs(cortex_rows)
+        results = apply_entitlement_and_masking(user, merged_rows, query, filters, date_filters)
+        st.session_state.results = results
+        st.session_state.payload = payload
 
 # ==============================================================================
 # ACTIVE FILTER CHIPS
@@ -834,7 +859,6 @@ if st.session_state.results is not None:
     if not results:
         st.info("No documents match the search and authorization criteria.")
     else:
-        # Export + Column Picker row
         btn_row = st.columns([1, 1, 6])
         with btn_row[0]:
             st.button("📁 Export To Excel")
@@ -856,7 +880,7 @@ if st.session_state.results is not None:
 </thead>
 <tbody>
 """
-        for r in results:
+        for idx, r in enumerate(results):
             table_html += "<tr>"
             table_html += f"<td>{escape(r['ATTACHMENT_ID'])}</td>"
             table_html += f"<td>{escape(r['TRACKING_ID'])}</td>"
@@ -865,20 +889,27 @@ if st.session_state.results is not None:
             table_html += f"<td>{escape(r['UPLOAD_DATE'])}</td>"
             table_html += f"<td>{escape(r['UPLOADED_BY_RESOLVED'])}</td>"
 
-            # Actions: Download pseudo-button only in table
-            table_html += "<td>"
+            # Actions: Download only in table (visual + backend hook)
             if r["CAN_DOWNLOAD"]:
-                table_html += (
-                    f"<span class='actions-btn' title='Download document'>Download</span>"
-                )
+                table_html += f"<td><span class='actions-btn' id='dl_{idx}'>Download</span></td>"
             else:
-                table_html += "<span class='badge-denied'>RESTRICTED</span>"
-            table_html += "</td>"
+                table_html += "<td><span class='badge-denied'>RESTRICTED</span></td>"
 
             table_html += "</tr>"
 
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
+
+        # Real backend hook for download (per-row buttons)
+        for r in results:
+            # In real wiring, you'd use JS or per-row Streamlit buttons.
+            # Here we expose a simple per-row button below for backend testing.
+            if st.button(f"Download {r['DOC_ID']}", key=f"dl_btn_{r['DOC_ID']}"):
+                ok, msg = download_document(user, r["_doc"], r["_case"])
+                if ok:
+                    st.success(msg)
+                else:
+                    st.error(msg)
 
 # ==============================================================================
 # GOVERNANCE / INSPECTOR (Technical Mode only)
@@ -904,8 +935,6 @@ if mode == "Technical Review":
                 "entitled_business_areas": user["business_areas"],
                 "pii_representation": "FULL" if user["unmasked_pii"] else "MASKED",
                 "raw_download": user["can_download"],
-                "authorization_boundary": "Spring Boot",
-                "cortex_search_is_authorization_boundary": False,
                 "dual_auth_case_subtypes": list(DUAL_AUTH_CASE_SUBTYPES),
                 "ldap_roles": user.get("ldap_roles", []),
             })
