@@ -444,6 +444,7 @@ def accordion_result_card(r, user):
     </div>
     """
 
+
 def mask_value(value):
     if not value:
         return value
