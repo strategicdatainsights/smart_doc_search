@@ -1,6 +1,7 @@
 import streamlit as st
 import re
 from html import escape
+from datetime import date
 
 st.set_page_config(
     page_title="Smart Document Platform — SD / ID",
@@ -22,6 +23,7 @@ USERS = {
         "business_areas": ["Market Regulation", "Complaints", "Exams"],
         "can_download": True,
         "unmasked_pii": True,
+        "ldap_roles": ["SBS_FRAUD_PR"],
     },
     "Analyst — SD (Exams Only, Masked)": {
         "username": "analyst.sd@state.sd.gov",
@@ -31,6 +33,7 @@ USERS = {
         "business_areas": ["Exams"],
         "can_download": True,
         "unmasked_pii": False,
+        "ldap_roles": [],
     },
     "Analyst — ID (Exams Only, No Download)": {
         "username": "analyst.id@state.id.gov",
@@ -40,12 +43,12 @@ USERS = {
         "business_areas": ["Exams"],
         "can_download": False,
         "unmasked_pii": False,
+        "ldap_roles": [],
     },
 }
 
 # ==============================================================================
-# SNOWFLAKE-READY MOCK TABLES
-# DOC_SEARCH_CONTENT (document-owned), SBS.ATTACHMENT, MR_CASE
+# MOCK DATA: DOC_SEARCH_CONTENT, SBS_ATTACHMENTS, SBS_CASES
 # ==============================================================================
 
 DOC_SEARCH_CONTENT = [
@@ -64,20 +67,10 @@ DOC_SEARCH_CONTENT = [
         "IS_CURRENT": True,
         "UPLOAD_DATE": "2019-10-03",
         "LOCKED": False,
-        "DOCUMENT_TITLE": "Accident Investigation Report — Sioux Falls",
-        "DOCUMENT_TYPE": "Accident Report",
-        "PAGE_COUNT": 4,
-        "MIME_TYPE": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.94,
-        "KEY_PHRASES": ["accident", "Sioux Falls", "Prairie Plains"],
-        "TOPICS": ["Auto", "Accident"],
-        "SUMMARY": "Accident near Sioux Falls reported by Jane Smith to Prairie Plains Mutual.",
-        "GEO_LOCATION": "Sioux Falls, SD",
-        "EVENT_DATE": "2019-09-30",
-        "PARTIES_MENTIONED": ["Jane Smith", "Prairie Plains Mutual Insurance Company"],
+        "DOC_TITLE": "Accident Investigation Report — Sioux Falls",
+        "DOC_TYPE": "Accident Report",
+        "DOC_DATE": "2019-10-03",
+        "HAS_PII": True,
     },
     {
         "DOC_ID": "DOC-10002",
@@ -94,20 +87,10 @@ DOC_SEARCH_CONTENT = [
         "IS_CURRENT": True,
         "UPLOAD_DATE": "2019-12-22",
         "LOCKED": True,
-        "DOCUMENT_TITLE": "Formal Dispute — Rapid City Accident",
-        "DOCUMENT_TYPE": "Dispute Letter",
-        "PAGE_COUNT": 3,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": False,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.91,
-        "KEY_PHRASES": ["formal dispute", "Rapid City", "Black Hills"],
-        "TOPICS": ["Auto", "Dispute"],
-        "SUMMARY": "Formal dispute filed by claimant regarding Rapid City accident.",
-        "GEO_LOCATION": "Rapid City, SD",
-        "EVENT_DATE": "2019-12-19",
-        "PARTIES_MENTIONED": ["Jane Doe", "Black Hills Mutual Insurance Company"],
+        "DOC_TITLE": "Formal Dispute — Rapid City Accident",
+        "DOC_TYPE": "Dispute Letter",
+        "DOC_DATE": "2019-12-22",
+        "HAS_PII": True,
     },
     {
         "DOC_ID": "DOC-10003",
@@ -123,20 +106,10 @@ DOC_SEARCH_CONTENT = [
         "IS_CURRENT": True,
         "UPLOAD_DATE": "2020-01-05",
         "LOCKED": False,
-        "DOCUMENT_TITLE": "Complaint — Vehicle Loss near Pierre",
-        "DOCUMENT_TYPE": "Complaint",
-        "PAGE_COUNT": 2,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": False,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.93,
-        "KEY_PHRASES": ["complaint", "claim denial", "vehicle loss"],
-        "TOPICS": ["Auto", "Complaint"],
-        "SUMMARY": "Complaint regarding denial of vehicle loss claim near Pierre.",
-        "GEO_LOCATION": "Pierre, SD",
-        "EVENT_DATE": "2020-01-02",
-        "PARTIES_MENTIONED": [],
+        "DOC_TITLE": "Complaint — Vehicle Loss near Pierre",
+        "DOC_TYPE": "Complaint",
+        "DOC_DATE": "2020-01-05",
+        "HAS_PII": True,
     },
     {
         "DOC_ID": "DOC-10004",
@@ -152,20 +125,10 @@ DOC_SEARCH_CONTENT = [
         "IS_CURRENT": True,
         "UPLOAD_DATE": "2020-01-22",
         "LOCKED": False,
-        "DOCUMENT_TITLE": "Exam — Accident Damage Assessment",
-        "DOCUMENT_TYPE": "Exam Report",
-        "PAGE_COUNT": 5,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": True,
-        "EXTRACTION_CONFIDENCE": 0.95,
-        "KEY_PHRASES": ["total loss", "accident", "Sioux Falls"],
-        "TOPICS": ["Auto", "Exam"],
-        "SUMMARY": "Exam report detailing total loss assessment after accident near Sioux Falls.",
-        "GEO_LOCATION": "Sioux Falls, SD",
-        "EVENT_DATE": "2020-01-20",
-        "PARTIES_MENTIONED": [],
+        "DOC_TITLE": "Exam — Accident Damage Assessment",
+        "DOC_TYPE": "Exam Report",
+        "DOC_DATE": "2020-01-22",
+        "HAS_PII": True,
     },
     {
         "DOC_ID": "DOC-10005",
@@ -181,72 +144,10 @@ DOC_SEARCH_CONTENT = [
         "IS_CURRENT": True,
         "UPLOAD_DATE": "2020-02-10",
         "LOCKED": False,
-        "DOCUMENT_TITLE": "Exam — Snake River Group Accident Assessment",
-        "DOCUMENT_TYPE": "Exam Report",
-        "PAGE_COUNT": 6,
-        "MIME_TYPE": "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": True,
-        "EXTRACTION_CONFIDENCE": 0.92,
-        "KEY_PHRASES": ["third party inspector", "Snake River Group", "Boise"],
-        "TOPICS": ["Casualty", "Exam"],
-        "SUMMARY": "Exam report from third-party inspector for Snake River Group accident near Boise.",
-        "GEO_LOCATION": "Boise, ID",
-        "EVENT_DATE": "2020-02-08",
-        "PARTIES_MENTIONED": ["Snake River Group LLC"],
-    },
-    {
-        "DOC_ID": "DOC-SD-30001",
-        "ATTACHMENT_ID": "ATT-SD-30001",
-        "CONTENT_TEXT": "Accident near Sioux Falls involving a commercial van. Adjuster noted inconsistent statements and possible policy lapse.",
-        "FILE_PATH": "SD/Market Regulation/ATT-SD-30001/sioux_falls_commercial_van.pdf",
-        "BUSINESS_AREA": "Market Regulation",
-        "DOC_STATE": "SD",
-        "CONTENT_HASH": "sha256:sd30001",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2022-01-03",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Accident — Commercial Van near Sioux Falls",
-        "DOCUMENT_TYPE": "Accident Report",
-        "PAGE_COUNT": 4,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.94,
-        "KEY_PHRASES": ["commercial van", "policy lapse", "Sioux Falls"],
-        "TOPICS": ["Auto", "Accident"],
-        "SUMMARY": "Accident involving commercial van near Sioux Falls with possible policy lapse.",
-        "GEO_LOCATION": "Sioux Falls, SD",
-        "EVENT_DATE": "2022-01-01",
-        "PARTIES_MENTIONED": [],
-    },
-    {
-        "DOC_ID": "DOC-ID-30010",
-        "ATTACHMENT_ID": "ATT-ID-30010",
-        "CONTENT_TEXT": "Accident damage assessment from third-party inspector retained by Snake River Group LLC near Boise.",
-        "FILE_PATH": "ID/Exams/ATT-ID-30010/snake_river_damage_assessment.pdf",
-        "BUSINESS_AREA": "Exams",
-        "DOC_STATE": "ID",
-        "CONTENT_HASH": "sha256:id30010",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2022-06-01",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Exam — Snake River Damage Assessment",
-        "DOCUMENT_TYPE": "Exam Report",
-        "PAGE_COUNT": 7,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": True,
-        "EXTRACTION_CONFIDENCE": 0.93,
-        "KEY_PHRASES": ["damage assessment", "Snake River Group", "Boise"],
-        "TOPICS": ["Casualty", "Exam"],
-        "SUMMARY": "Detailed damage assessment for Snake River Group accident near Boise.",
-        "GEO_LOCATION": "Boise, ID",
-        "EVENT_DATE": "2022-05-30",
-        "PARTIES_MENTIONED": ["Snake River Group LLC"],
+        "DOC_TITLE": "Exam — Snake River Group Accident Assessment",
+        "DOC_TYPE": "Exam Report",
+        "DOC_DATE": "2020-02-10",
+        "HAS_PII": True,
     },
 ]
 
@@ -286,20 +187,6 @@ SBS_ATTACHMENTS = {
         "UPLOAD_USER": "examiner.id@doi.gov",
         "UPLOAD_TIMESTAMP": "2020-02-10T16:20:00Z",
     },
-    "ATT-SD-30001": {
-        "FILE_NAME": "sioux_falls_commercial_van.pdf",
-        "TRACKING_ID": "SD-T30001",
-        "ATTACHMENT_TYPE": "Accident Report",
-        "UPLOAD_USER": "reg.sd@state.sd.gov",
-        "UPLOAD_TIMESTAMP": "2022-01-03T09:00:00Z",
-    },
-    "ATT-ID-30010": {
-        "FILE_NAME": "snake_river_damage_assessment.pdf",
-        "TRACKING_ID": "ID-T30010",
-        "ATTACHMENT_TYPE": "Exam Report",
-        "UPLOAD_USER": "reg.id@state.id.gov",
-        "UPLOAD_TIMESTAMP": "2022-06-01T13:30:00Z",
-    },
 }
 
 SBS_CASES = {
@@ -309,21 +196,12 @@ SBS_CASES = {
         "INVESTIGATOR": "A. Miller",
         "SECONDARY_INVESTIGATOR": None,
         "ENTITY_NAME": "Prairie Plains Mutual Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Medium",
-        "RISK_CATEGORY": "Property",
-        "CASE_NOTES": "Initial complaint received; awaiting carrier response.",
-        "REGULATOR_COMMENTS": "Monitor for timely response.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Complaints",
+        "CASE_SUBTYPE": "Inquiry",
+        "LOI": "Property",
+        "LOI_LIST": ["Property"],
         "CASE_INITIATED": "2019-09-28",
         "CASE_OPENED": "2019-10-01",
         "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "9083",
-        "CASE_SUBTYPE": "Inquiry",
-        "LOI": "Property",
-        "DISPOSITION": None,
     },
     "12351": {
         "CASE_TYPE": "Enforcement",
@@ -331,21 +209,12 @@ SBS_CASES = {
         "INVESTIGATOR": "R. Vance",
         "SECONDARY_INVESTIGATOR": "C. Davis",
         "ENTITY_NAME": "Black Hills Mutual Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "High",
-        "RISK_CATEGORY": "Casualty",
-        "CASE_NOTES": "Formal dispute escalated to enforcement; settlement reached.",
-        "REGULATOR_COMMENTS": "Ensure corrective action implemented.",
-        "FOLLOW_UP_REQUIRED": False,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Enforcement",
+        "CASE_SUBTYPE": "Investigations",
+        "LOI": "Casualty",
+        "LOI_LIST": ["Casualty", "Enforcement LOB"],
         "CASE_INITIATED": "2019-12-18",
         "CASE_OPENED": "2019-12-20",
         "CASE_CLOSED": "2020-01-15",
-        "NAIC_GROUP_NUMBER": "8056",
-        "CASE_SUBTYPE": "Investigations",
-        "LOI": "Casualty",
-        "DISPOSITION": "Settled",
     },
     "12352": {
         "CASE_TYPE": "Complaints",
@@ -353,21 +222,12 @@ SBS_CASES = {
         "INVESTIGATOR": "A. Miller",
         "SECONDARY_INVESTIGATOR": None,
         "ENTITY_NAME": "Dakota Plains Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Low",
-        "RISK_CATEGORY": "Auto",
-        "CASE_NOTES": "Vehicle loss complaint; documentation requested.",
-        "REGULATOR_COMMENTS": "Awaiting carrier documentation.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Complaints",
+        "CASE_SUBTYPE": "Inquiry",
+        "LOI": "Auto",
+        "LOI_LIST": ["Auto Physical Damage"],
         "CASE_INITIATED": "2020-01-03",
         "CASE_OPENED": "2020-01-05",
         "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "1234",
-        "CASE_SUBTYPE": "Inquiry",
-        "LOI": "Auto",
-        "DISPOSITION": None,
     },
     "12345": {
         "CASE_TYPE": "Market Conduct Exams",
@@ -375,21 +235,12 @@ SBS_CASES = {
         "INVESTIGATOR": "C. Davis",
         "SECONDARY_INVESTIGATOR": "A. Miller",
         "ENTITY_NAME": "Missouri River Life Underwriters",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "High",
-        "RISK_CATEGORY": "Life",
-        "CASE_NOTES": "Exam focusing on life claim handling and beneficiary practices.",
-        "REGULATOR_COMMENTS": "Preliminary findings indicate documentation gaps.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Exams",
+        "CASE_SUBTYPE": "Market Conduct",
+        "LOI": "Life",
+        "LOI_LIST": ["Life", "Beneficiary Practices"],
         "CASE_INITIATED": "2020-01-20",
         "CASE_OPENED": "2020-01-22",
         "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "5678",
-        "CASE_SUBTYPE": "Market Conduct",
-        "LOI": "Life",
-        "DISPOSITION": None,
     },
     "12355": {
         "CASE_TYPE": "Market Conduct Exams",
@@ -397,106 +248,34 @@ SBS_CASES = {
         "INVESTIGATOR": "C. Davis",
         "SECONDARY_INVESTIGATOR": None,
         "ENTITY_NAME": "Snake River Group LLC",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Medium",
-        "RISK_CATEGORY": "Casualty",
-        "CASE_NOTES": "Exam completed; casualty claim handling reviewed.",
-        "REGULATOR_COMMENTS": "No further action required.",
-        "FOLLOW_UP_REQUIRED": False,
-        "CASE_REGION": "West",
-        "CASE_DIVISION": "Exams",
+        "CASE_SUBTYPE": "Market Conduct",
+        "LOI": "Casualty",
+        "LOI_LIST": ["Casualty", "Exam Coverage"],
         "CASE_INITIATED": "2020-02-08",
         "CASE_OPENED": "2020-02-10",
         "CASE_CLOSED": "2020-03-01",
-        "NAIC_GROUP_NUMBER": "7777",
-        "CASE_SUBTYPE": "Market Conduct",
-        "LOI": "Casualty",
-        "DISPOSITION": "Dismissed",
-    },
-    "SD-T30001": {
-        "CASE_TYPE": "Market Regulation",
-        "CASE_STATUS": "Open",
-        "INVESTIGATOR": "A. Miller",
-        "SECONDARY_INVESTIGATOR": "J. Reynolds",
-        "ENTITY_NAME": "Prairie Plains Mutual Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Medium",
-        "RISK_CATEGORY": "Auto",
-        "CASE_NOTES": "Commercial van accident; policy lapse under review.",
-        "REGULATOR_COMMENTS": "Request underwriting file.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Market Regulation",
-        "CASE_INITIATED": "2022-01-02",
-        "CASE_OPENED": "2022-01-03",
-        "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "9083",
-        "CASE_SUBTYPE": "Accident",
-        "LOI": "Auto",
-        "DISPOSITION": None,
-    },
-    "ID-T30010": {
-        "CASE_TYPE": "Market Conduct Exams",
-        "CASE_STATUS": "Under Review",
-        "INVESTIGATOR": "C. Davis",
-        "SECONDARY_INVESTIGATOR": "R. Vance",
-        "ENTITY_NAME": "Snake River Group LLC",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "High",
-        "RISK_CATEGORY": "Casualty",
-        "CASE_NOTES": "Damage assessment and claim handling under exam.",
-        "REGULATOR_COMMENTS": "Focus on timeliness and documentation.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "West",
-        "CASE_DIVISION": "Exams",
-        "CASE_INITIATED": "2022-05-30",
-        "CASE_OPENED": "2022-06-01",
-        "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "7777",
-        "CASE_SUBTYPE": "Market Conduct",
-        "LOI": "Casualty",
-        "DISPOSITION": None,
     },
 }
 
 # ==============================================================================
-# FIELD / PAYLOAD CONFIGURATION (DOCUMENT-ONLY FOR CORTEX)
+# IDENTITY RESOLUTION MOCK
 # ==============================================================================
 
-FIELD_MATRIX = {
-    "Market Regulation": {
-        "base": [
-            "DOC_ID",
-            "ATTACHMENT_ID",
-            "CONTENT_TEXT",
-            "BUSINESS_AREA",
-            "DOC_STATE",
-            "IS_CURRENT",
-        ],
-    },
-    "Complaints": {
-        "base": [
-            "DOC_ID",
-            "ATTACHMENT_ID",
-            "CONTENT_TEXT",
-            "BUSINESS_AREA",
-            "DOC_STATE",
-            "IS_CURRENT",
-        ],
-    },
-    "Exams": {
-        "base": [
-            "DOC_ID",
-            "ATTACHMENT_ID",
-            "CONTENT_TEXT",
-            "BUSINESS_AREA",
-            "DOC_STATE",
-            "IS_CURRENT",
-        ],
-    },
+IDENTITY_CACHE = {
+    "reg.sd@state.sd.gov": "Sarah Daniels",
+    "analyst.sd@state.sd.gov": "Sam Driver",
+    "analyst.id@state.id.gov": "Ian Dalton",
+    "adjuster.sd@carrier.com": "Alex Adjuster",
+    "examiner.sd@doi.gov": "Evelyn Reed",
+    "examiner.id@doi.gov": "Evan Rivers",
+    "complaints.sd@doi.gov": "Cora Complaints",
+    "claimant.sd@consumer.com": "Chris Claimant",
 }
 
-PII_FIELDS = {"ENTITY_NAME", "INVESTIGATOR"}
+def resolve_identity(raw_email):
+    if not raw_email:
+        return raw_email
+    return IDENTITY_CACHE.get(raw_email.lower(), raw_email)
 
 # ==============================================================================
 # CSS
@@ -559,20 +338,61 @@ html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSyst
     border-radius:2px;
     font-style:normal;
 }
+.filter-chip {
+    display:inline-block;
+    background:#e3f2fd;
+    color:#1e88e5;
+    padding:3px 8px;
+    border-radius:12px;
+    font-size:11px;
+    margin-right:6px;
+    margin-bottom:4px;
+}
+.results-table {
+    width:100%;
+    border-collapse:collapse;
+    font-size:13px;
+}
+.results-table th, .results-table td {
+    border-bottom:1px solid #eee;
+    padding:6px 8px;
+    text-align:left;
+}
+.results-table th {
+    background:#f5f5f5;
+    font-weight:600;
+}
+.results-table tr:hover {
+    background:#fafafa;
+}
+.tracking-link {
+    color:#1e88e5;
+    text-decoration:underline;
+    cursor:pointer;
+}
 </style>
 """, unsafe_allow_html=True)
 
 # ==============================================================================
-# BACKEND SIMULATION (SNOWFLAKE-READY)
+# SECURITY / AUTH HELPERS
 # ==============================================================================
+
+DUAL_AUTH_CASE_SUBTYPES = {"Investigations", "Prosecutions"}
+REQUIRED_LDAP_ROLE = "SBS_FRAUD_PR"
+
+def has_dual_auth(user, case):
+    subtype = case.get("CASE_SUBTYPE")
+    requires_dual = subtype in DUAL_AUTH_CASE_SUBTYPES
+    has_fraud_role = REQUIRED_LDAP_ROLE in user.get("ldap_roles", [])
+    if not requires_dual:
+        return True
+    return has_fraud_role
 
 def mask_value(value):
     if not value:
         return value
     if "@" in value:
         return "[EMAIL MASKED]"
-    if re.fullmatch(r"\d{3}-\d{2}-\d{4}", value):
-        return "***-**-****"
     words = value.split()
     masked = []
     for word in words:
@@ -582,30 +402,47 @@ def mask_value(value):
             masked.append(word[:1] + "*" * max(len(word) - 1, 1))
     return " ".join(masked)
 
-
 def mask_text(text, entity_name=None):
     if not text:
         return text
     if entity_name:
         text = re.sub(re.escape(entity_name), mask_value(entity_name), text)
     text = re.sub(r"\b[\w.+-]+@[\w.-]+\.\w+\b", "[EMAIL MASKED]", text)
-    text = re.sub(r"\b(?:\d{3}[-.\s]){2}\d{4}\b", "[PHONE MASKED]", text)
-    text = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "***-**-****", text)
     return text
 
-
 def authorized_documents(user, selected_ba):
-    return [
+    docs = [
         d for d in DOC_SEARCH_CONTENT
         if d["DOC_STATE"] == user["state"]
         and d["BUSINESS_AREA"] == selected_ba
         and selected_ba in user["business_areas"]
         and d["IS_CURRENT"]
     ]
-
+    filtered = []
+    for d in docs:
+        attachment = SBS_ATTACHMENTS.get(d["ATTACHMENT_ID"])
+        if not attachment:
+            continue
+        case = SBS_CASES.get(attachment["TRACKING_ID"])
+        if not case:
+            continue
+        if not has_dual_auth(user, case):
+            continue
+        filtered.append(d)
+    return filtered
 
 def build_search_payload(user, query, selected_ba, filters):
-    allowed = FIELD_MATRIX[selected_ba]["base"]
+    columns = [
+        "DOC_ID",
+        "TRACKING_ID",
+        "FILE_NAME",
+        "DOC_TITLE",
+        "DOC_TYPE",
+        "DOC_DATE",
+        "BUSINESS_AREA",
+        "DOC_STATE",
+        "CONTENT_TEXT",
+    ]
     cortex_filter = {
         "@and": [
             {"@eq": {"DOC_STATE": user["state"]}},
@@ -615,15 +452,12 @@ def build_search_payload(user, query, selected_ba, filters):
     }
     return {
         "query": query,
-        "columns": allowed,
+        "columns": columns,
         "filter": cortex_filter,
         "limit": 10,
-        "authorization_boundary": "Spring Boot",
-        "raw_document_access": "backend controlled",
     }
 
-
-def run_search(user, query, selected_ba, filters):
+def run_search(user, query, selected_ba, filters, date_filters):
     docs = authorized_documents(user, selected_ba)
     q = query.strip().lower()
     results = []
@@ -636,9 +470,31 @@ def run_search(user, query, selected_ba, filters):
         if not case:
             continue
 
+        # Basic date filtering (string dates, simple comparison)
+        def within_range(field_name, drange):
+            if not drange or not drange[0] or not drange[1]:
+                return True
+            val = case.get(field_name) if field_name != "UPLOAD_DATE" else d.get("UPLOAD_DATE")
+            if not val:
+                return False
+            try:
+                v = date.fromisoformat(val)
+                return drange[0] <= v <= drange[1]
+            except Exception:
+                return True
+
+        if not within_range("CASE_INITIATED", date_filters.get("case_initiated")):
+            continue
+        if not within_range("CASE_OPENED", date_filters.get("case_opened")):
+            continue
+        if not within_range("CASE_CLOSED", date_filters.get("case_closed")):
+            continue
+        if not within_range("UPLOAD_DATE", date_filters.get("file_upload")):
+            continue
+
         haystack_parts = [
             d["CONTENT_TEXT"],
-            d.get("DOCUMENT_TITLE", ""),
+            d.get("DOC_TITLE", ""),
             attachment["FILE_NAME"],
             case["ENTITY_NAME"],
             case["INVESTIGATOR"],
@@ -647,8 +503,7 @@ def run_search(user, query, selected_ba, filters):
             case["CASE_STATUS"],
             case["CASE_SUBTYPE"],
             case["LOI"],
-            case.get("CASE_NOTES") or "",
-            case.get("REGULATOR_COMMENTS") or "",
+            " ".join(case.get("LOI_LIST", [])),
         ]
         haystack = " ".join(haystack_parts).lower()
 
@@ -657,12 +512,10 @@ def run_search(user, query, selected_ba, filters):
             if not all(term in haystack for term in terms):
                 continue
 
-        if filters.get("case_type"):
-            if case["CASE_TYPE"] != filters["case_type"]:
-                continue
-        if filters.get("status"):
-            if case["CASE_STATUS"] != filters["status"]:
-                continue
+        if filters.get("case_type") and case["CASE_TYPE"] != filters["case_type"]:
+            continue
+        if filters.get("status") and case["CASE_STATUS"] != filters["status"]:
+            continue
         if filters.get("investigator"):
             inv_q = filters["investigator"].lower()
             if inv_q not in case["INVESTIGATOR"].lower() and (
@@ -674,17 +527,14 @@ def run_search(user, query, selected_ba, filters):
             ent_q = filters["entity"].lower()
             if ent_q not in case["ENTITY_NAME"].lower():
                 continue
-        if filters.get("tracking_id"):
-            if attachment["TRACKING_ID"] != filters["tracking_id"]:
-                continue
-        if filters.get("naic_group"):
-            if case["NAIC_GROUP_NUMBER"] != filters["naic_group"]:
-                continue
-        if filters.get("case_subtype"):
-            if case["CASE_SUBTYPE"] != filters["case_subtype"]:
-                continue
+        if filters.get("tracking_id") and attachment["TRACKING_ID"] != filters["tracking_id"]:
+            continue
+        if filters.get("case_subtype") and case["CASE_SUBTYPE"] != filters["case_subtype"]:
+            continue
         if filters.get("loi"):
-            if case["LOI"] != filters["loi"]:
+            loi_q = filters["loi"].lower()
+            loi_list = case.get("LOI_LIST", [])
+            if not any(loi_q in item.lower() for item in loi_list):
                 continue
 
         if user["unmasked_pii"]:
@@ -707,31 +557,41 @@ def run_search(user, query, selected_ba, filters):
                     flags=re.IGNORECASE,
                 )
 
+        semantic_score = 0.85 + 0.05 * min(len(q.split()), 3)
+        uploaded_raw = attachment["UPLOAD_USER"]
+        uploaded_resolved = resolve_identity(uploaded_raw)
+
         results.append({
             "DOC_ID": d["DOC_ID"],
             "ATTACHMENT_ID": d["ATTACHMENT_ID"],
             "TRACKING_ID": attachment["TRACKING_ID"],
             "FILE_NAME": display_file_name,
-            "DOCUMENT_TITLE": d.get("DOCUMENT_TITLE", attachment["FILE_NAME"]),
-            "DOCUMENT_DATE": d["UPLOAD_DATE"],
-            "DOCUMENT_TYPE": d.get("DOCUMENT_TYPE", "Document"),
+            "DOC_TITLE": d.get("DOC_TITLE", attachment["FILE_NAME"]),
+            "DOC_TYPE": d.get("DOC_TYPE", "Document"),
+            "DOC_DATE": d.get("DOC_DATE", d.get("UPLOAD_DATE")),
+            "UPLOAD_DATE": d.get("UPLOAD_DATE"),
             "STATE": d["DOC_STATE"],
             "BUSINESS_AREA": d["BUSINESS_AREA"],
             "SNIPPET": snippet,
             "CASE_TYPE": case["CASE_TYPE"],
             "CASE_STATUS": case["CASE_STATUS"],
+            "CASE_SUBTYPE": case["CASE_SUBTYPE"],
             "INVESTIGATOR_DISPLAY": display_investigator,
             "ENTITY_NAME_DISPLAY": display_entity,
             "LOI_DISPLAY": case["LOI"],
-            "LOCKED": d["LOCKED"],
+            "LOI_LIST": case.get("LOI_LIST", []),
+            "ATTACHMENT_TYPE": attachment.get("ATTACHMENT_TYPE", "N/A"),
             "CAN_DOWNLOAD": user["can_download"],
+            "SEMANTIC_SCORE": semantic_score,
+            "UPLOADED_BY_RAW": uploaded_raw,
+            "UPLOADED_BY_RESOLVED": uploaded_resolved,
             "_doc": d,
             "_attachment": attachment,
             "_case": case,
         })
 
+    results.sort(key=lambda r: r["SEMANTIC_SCORE"], reverse=True)
     return results
-
 
 def download_document(user, doc_row, case_row):
     CONFIDENTIAL_CASE_TYPES = {
@@ -744,7 +604,6 @@ def download_document(user, doc_row, case_row):
         "Fraud",
     }
     case_type = case_row["CASE_TYPE"]
-
     if user["role"] != "STATE_REGULATOR" and case_type in CONFIDENTIAL_CASE_TYPES:
         return False, "Download denied: confidential case type requires regulator access."
     if not user["can_download"]:
@@ -765,11 +624,20 @@ if "results" not in st.session_state:
     st.session_state.results = None
 if "payload" not in st.session_state:
     st.session_state.payload = None
+if "visible_columns" not in st.session_state:
+    st.session_state.visible_columns = [
+        "ATTACHMENT_ID",
+        "TRACKING_ID",
+        "FILE_NAME",
+        "SNIPPET",
+        "UPLOAD_DATE",
+        "UPLOADED_BY_RESOLVED",
+    ]
 
 user = USERS[st.session_state.selected_user]
 
 # ==============================================================================
-# HEADER
+# HEADER + MODE TOGGLE
 # ==============================================================================
 
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
@@ -784,33 +652,17 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-c1, c2 = st.columns([4, 2])
-with c1:
-    st.caption("Prototype: S3 → DOC_SEARCH_CONTENT → Spring Boot auth → Cortex Search → SBS join → UI")
-with c2:
+top_left, top_right = st.columns([4, 3])
+with top_left:
+    st.caption("Prototype: DOC_SEARCH_CONTENT → Spring Boot auth → Cortex Search → SBS join → UI")
+with top_right:
     selected = st.selectbox("Persona", list(USERS), index=list(USERS).index(st.session_state.selected_user))
+    mode = st.radio("Mode", ["Client Demo", "Technical Review"], horizontal=True)
     if selected != st.session_state.selected_user:
         st.session_state.selected_user = selected
         st.session_state.results = None
         st.session_state.payload = None
         st.rerun()
-
-with st.expander("Architecture / Data Flow", expanded=False):
-    st.markdown("""
-**Flow**
-
-`S3 → DOC_SEARCH_CONTENT (document-owned fields) → Spring Boot authorization → Cortex Search → SBS.ATTACHMENT / MR_CASE join → UI`
-
-**Ownership**
-
-- DOC_SEARCH_CONTENT: document text + document-derived metadata  
-- SBS.ATTACHMENT: file name, tracking ID, upload metadata  
-- MR_CASE: case metadata (type, status, investigator, entity, LOI, etc.)
-
-**Authorization**
-
-Spring Boot is the authorization boundary. Cortex Search is not.
-""")
 
 # ==============================================================================
 # SEARCH UI
@@ -823,39 +675,73 @@ business_area = st.selectbox(
     user["business_areas"],
 )
 
-query = st.text_area(
-    "Search Document Contents (semantic)",
-    placeholder="Search within document text, titles, case notes, investigators, entities...",
-    height=100,
-)
+with st.form(key="search_form"):
+    query = st.text_area(
+        "Search Document Contents (semantic)",
+        placeholder="Search within document text, titles, case notes, investigators, entities...",
+        height=100,
+    )
 
-with st.expander("Case Filters", expanded=True):
-    c1, c2 = st.columns(2)
-    with c1:
-        case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
-        status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
-        case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
-        loi = st.text_input("Line of Insurance (LOI)", placeholder="e.g., Auto, Property, Life")
-    with c2:
-        tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12350")
-        investigator = st.text_input("Investigator", placeholder="Primary or secondary investigator")
-        entity = st.text_input("Entity Name", placeholder="Insurer or company name")
-        naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
+    with st.expander("Case Filters", expanded=True):
+        c1, c2 = st.columns(2)
+        with c1:
+            case_type = st.selectbox("Case Type", ["", "Complaints", "Enforcement", "Market Regulation", "Market Conduct Exams"])
+            status = st.selectbox("Status", ["", "Open", "Closed", "Under Review", "Pending"])
+            case_subtype = st.text_input("Case Sub-Type", placeholder="e.g., Inquiry, Market Conduct")
+            loi = st.text_input("Line of Insurance (LOI)", placeholder="e.g., Auto, Property, Life")
+        with c2:
+            tracking_id = st.text_input("Tracking ID", placeholder="e.g., 12350")
+            investigator = st.text_input("Investigator", placeholder="Primary or secondary investigator")
+            entity = st.text_input("Entity Name", placeholder="Insurer or company name")
+            naic_group = st.text_input("NAIC Group Number", placeholder="e.g., 9083")
 
-with st.expander("Document Filters", expanded=False):
-    d1, d2 = st.columns(2)
-    with d1:
-        doc_name = st.text_input("Document Title / Name", placeholder="e.g., Accident Investigation Report")
-        file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
-    with d2:
-        topics = st.text_input("Topics / Key Phrases", placeholder="e.g., accident, casualty, exam")
-        geo = st.text_input("Location Keyword", placeholder="e.g., Sioux Falls, Boise")
+    with st.expander("Document Filters", expanded=False):
+        d1, d2 = st.columns(2)
+        with d1:
+            doc_name = st.text_input("Document Title / Name", placeholder="e.g., Accident Investigation Report")
+            file_type = st.selectbox("File Type", ["", ".pdf", ".docx"])
+            attachment_type = st.selectbox("Attachment Type", ["", "Report", "Letter", "Complaint", "Exam Report"])
+        with d2:
+            topics = st.text_input("Topics / Key Phrases", placeholder="e.g., accident, casualty, exam")
+            geo = st.text_input("Location Keyword", placeholder="e.g., Sioux Falls, Boise")
 
-btn_cols = st.columns([1, 1, 6])
-with btn_cols[0]:
-    search_clicked = st.button("🔍 Search", type="primary")
-with btn_cols[1]:
-    reset_clicked = st.button("Reset")
+    with st.expander("Dates", expanded=False):
+        dc1, dc2 = st.columns(2)
+        with dc1:
+            case_initiated_from = st.date_input("Case Initiated From", value=None)
+            case_initiated_to = st.date_input("Case Initiated To", value=None)
+            case_opened_from = st.date_input("Case Opened From", value=None)
+            case_opened_to = st.date_input("Case Opened To", value=None)
+        with dc2:
+            case_closed_from = st.date_input("Case Closed From", value=None)
+            case_closed_to = st.date_input("Case Closed To", value=None)
+            file_upload_from = st.date_input("File Upload From", value=None)
+            file_upload_to = st.date_input("File Upload To", value=None)
+
+    with st.expander("Additional Details", expanded=False):
+        ad1, ad2 = st.columns(2)
+        with ad1:
+            state_keywords = st.multiselect("State Keyword", ["Sioux Falls", "Rapid City", "Pierre", "Boise"])
+        with ad2:
+            reason = st.selectbox("Reason", ["", "Accident", "Complaint", "Exam", "Dispute"])
+
+    btn_cols = st.columns([1, 1, 6])
+    with btn_cols[0]:
+        search_clicked = st.form_submit_button("🔍 Search", type="primary")
+    with btn_cols[1]:
+        reset_clicked = st.form_submit_button("Reset")
+
+if reset_clicked:
+    st.session_state.results = None
+    st.session_state.payload = None
+    st.rerun()
+
+date_filters = {
+    "case_initiated": (case_initiated_from, case_initiated_to) if case_initiated_from and case_initiated_to else None,
+    "case_opened": (case_opened_from, case_opened_to) if case_opened_from and case_opened_to else None,
+    "case_closed": (case_closed_from, case_closed_to) if case_closed_from and case_closed_to else None,
+    "file_upload": (file_upload_from, file_upload_to) if file_upload_from and file_upload_to else None,
+}
 
 if search_clicked:
     if not query.strip() or len(query.strip()) < 3:
@@ -874,17 +760,59 @@ if search_clicked:
             "file_type": file_type or None,
             "topics": topics or None,
             "geo": geo or None,
+            "attachment_type": attachment_type or None,
+            "state_keywords": state_keywords or None,
+            "reason": reason or None,
         }
-        st.session_state.results = run_search(user, query, business_area, filters)
+        st.session_state.results = run_search(user, query, business_area, filters, date_filters)
         st.session_state.payload = build_search_payload(user, query, business_area, filters)
 
-if reset_clicked:
-    st.session_state.results = None
-    st.session_state.payload = None
-    st.rerun()
+# ==============================================================================
+# ACTIVE FILTER CHIPS
+# ==============================================================================
+
+if st.session_state.results is not None:
+    filters = []
+    if case_type:
+        filters.append(f"Case Type: {case_type}")
+    if status:
+        filters.append(f"Status: {status}")
+    if case_subtype:
+        filters.append(f"Sub-Type: {case_subtype}")
+    if loi:
+        filters.append(f"LOI: {loi}")
+    if tracking_id:
+        filters.append(f"Tracking ID: {tracking_id}")
+    if investigator:
+        filters.append(f"Investigator: {investigator}")
+    if entity:
+        filters.append(f"Entity: {entity}")
+    if naic_group:
+        filters.append(f"NAIC Group: {naic_group}")
+    if doc_name:
+        filters.append(f"Doc Name: {doc_name}")
+    if file_type:
+        filters.append(f"File Type: {file_type}")
+    if topics:
+        filters.append(f"Topics: {topics}")
+    if geo:
+        filters.append(f"Geo: {geo}")
+    if attachment_type:
+        filters.append(f"Attachment Type: {attachment_type}")
+    if state_keywords:
+        filters.append(f"State Keywords: {', '.join(state_keywords)}")
+    if reason:
+        filters.append(f"Reason: {reason}")
+    if any(date_filters.values()):
+        filters.append("Date Filters: Active")
+
+    if filters:
+        st.markdown("#### Active Filters")
+        chips_html = "".join([f"<span class='filter-chip'>{escape(f)}</span>" for f in filters])
+        st.markdown(chips_html, unsafe_allow_html=True)
 
 # ==============================================================================
-# RESULTS
+# RESULTS TABLE
 # ==============================================================================
 
 if st.session_state.results is not None:
@@ -893,84 +821,127 @@ if st.session_state.results is not None:
     if not results:
         st.info("No documents match the search and authorization criteria.")
     else:
+        all_columns = [
+            "ATTACHMENT_ID",
+            "TRACKING_ID",
+            "FILE_NAME",
+            "DOC_TITLE",
+            "DOC_TYPE",
+            "DOC_DATE",
+            "UPLOAD_DATE",
+            "BUSINESS_AREA",
+            "STATE",
+            "CASE_TYPE",
+            "CASE_STATUS",
+            "CASE_SUBTYPE",
+            "LOI_DISPLAY",
+            "LOI_LIST",
+            "UPLOADED_BY_RESOLVED",
+            "INVESTIGATOR_DISPLAY",
+            "ENTITY_NAME_DISPLAY",
+            "ATTACHMENT_TYPE",
+            "SEMANTIC_SCORE",
+        ]
+        st.markdown("#### Column Picker")
+        st.session_state.visible_columns = st.multiselect(
+            "Visible Columns (Attachment ID and Tracking ID are always shown)",
+            options=[c for c in all_columns if c not in ["ATTACHMENT_ID", "TRACKING_ID"]],
+            default=st.session_state.visible_columns,
+        )
+
+        table_html = "<table class='results-table'><thead><tr>"
+        table_html += "<th>Attachment ID</th><th>Tracking ID</th>"
+        for col in st.session_state.visible_columns:
+            table_html += f"<th>{escape(col.replace('_', ' '))}</th>"
+        table_html += "</tr></thead><tbody>"
+
         for r in results:
-            with st.container(border=True):
-                cols = st.columns([1.3, 1.1, 2.0, 3.5, 1.2])
-                cols[0].markdown(f"**DOC_ID**  \n{r['DOC_ID']}")
-                cols[1].markdown(f"**Tracking ID**  \n{r['TRACKING_ID']}")
-                cols[2].markdown(f"**Document**  \n{r['DOCUMENT_TITLE']}")
-                cols[3].markdown(
-                    f"**Content**  \n<span class='sdp-snippet'>“{r['SNIPPET']}”</span>",
-                    unsafe_allow_html=True,
-                )
-                with cols[4]:
-                    if r["CAN_DOWNLOAD"]:
-                        if st.button("⬇ Download", key=f"dl_{r['DOC_ID']}"):
-                            ok, msg = download_document(user, r["_doc"], r["_case"])
-                            if ok:
-                                st.success(msg)
-                            else:
-                                st.error(msg)
-                    else:
-                        st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
+            table_html += "<tr>"
+            table_html += f"<td>{escape(r['ATTACHMENT_ID'])}</td>"
+            table_html += (
+                f"<td><span class='tracking-link' title='Opens Case Summary in V2'>"
+                f"{escape(r['TRACKING_ID'])}</span></td>"
+            )
+            for col in st.session_state.visible_columns:
+                val = r.get(col)
+                if col == "SNIPPET":
+                    cell = f"<span class='sdp-snippet'>“{r['SNIPPET']}”</span>"
+                elif col == "LOI_LIST" and isinstance(val, list):
+                    cell = ", ".join(val)
+                elif col == "SEMANTIC_SCORE":
+                    cell = f"{r['SEMANTIC_SCORE']:.2f}"
+                else:
+                    cell = escape(str(val)) if val is not None else "N/A"
+                table_html += f"<td>{cell}</td>"
+            table_html += "</tr>"
 
-        with st.expander("Result Metadata", expanded=False):
-            m1, m2, m3 = st.columns(3)
-            m1.markdown(f"**Document Type**  \n{results[0]['DOCUMENT_TYPE']}")
-            m1.markdown(f"**Document Date**  \n{results[0]['DOCUMENT_DATE']}")
-            m1.markdown(f"**State**  \n{results[0]['STATE']}")
-            m2.markdown(f"**Business Area**  \n{results[0]['BUSINESS_AREA']}")
-            m2.markdown(f"**Case Type**  \n{results[0]['CASE_TYPE']}")
-            m2.markdown(f"**Status**  \n{results[0]['CASE_STATUS']}")
-            m3.markdown(f"**Investigator**  \n{results[0]['INVESTIGATOR_DISPLAY']}")
-            m3.markdown(f"**Entity**  \n{results[0]['ENTITY_NAME_DISPLAY']}")
-            m3.markdown(f"**LOI**  \n{results[0]['LOI_DISPLAY']}")
+        table_html += "</tbody></table>"
+        st.markdown(table_html, unsafe_allow_html=True)
+
+        st.markdown("#### Actions")
+        for r in results:
+            cols = st.columns([3, 1])
+            with cols[0]:
+                st.caption(f"{r['DOC_ID']} · {r['FILE_NAME']}")
+            with cols[1]:
+                if r["CAN_DOWNLOAD"]:
+                    if st.button("⬇ Download", key=f"dl_{r['DOC_ID']}"):
+                        ok, msg = download_document(user, r["_doc"], r["_case"])
+                        if ok:
+                            st.success(msg)
+                        else:
+                            st.error(msg)
+                else:
+                    st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
 
 # ==============================================================================
-# GOVERNANCE / INTEGRATION INSPECTOR
+# GOVERNANCE / INSPECTOR (TECHNICAL MODE ONLY)
 # ==============================================================================
 
-with st.expander("🛠 Governance / Integration Inspector", expanded=False):
-    tab1, tab2, tab3 = st.tabs(["Backend Payload", "Authorization Trace", "Document Relationship"])
+if mode == "Technical Review":
+    with st.expander("🛠 Governance / Integration Inspector", expanded=False):
+        tab1, tab2, tab3 = st.tabs(["Backend Payload", "Authorization Trace", "Document Relationship"])
 
-    with tab1:
-        st.caption("Payload Spring Boot constructs for Cortex Search. UI does not choose authorization fields.")
-        if st.session_state.payload:
-            st.json(st.session_state.payload)
-        else:
-            st.info("Run a search to view the generated payload.")
+        with tab1:
+            st.caption("Payload Spring Boot constructs for Cortex Search.")
+            if st.session_state.payload:
+                st.json(st.session_state.payload)
+            else:
+                st.info("Run a search to view the generated payload.")
 
-    with tab2:
-        st.json({
-            "authenticated_user": user["username"],
-            "role": user["role"],
-            "jurisdiction": user["jurisdiction"],
-            "enforced_state": user["state"],
-            "entitled_business_areas": user["business_areas"],
-            "pii_representation": "FULL" if user["unmasked_pii"] else "MASKED",
-            "raw_download": user["can_download"],
-            "authorization_boundary": "Spring Boot",
-            "cortex_search_is_authorization_boundary": False,
-        })
+        with tab2:
+            st.json({
+                "authenticated_user": user["username"],
+                "role": user["role"],
+                "jurisdiction": user["jurisdiction"],
+                "enforced_state": user["state"],
+                "entitled_business_areas": user["business_areas"],
+                "pii_representation": "FULL" if user["unmasked_pii"] else "MASKED",
+                "raw_download": user["can_download"],
+                "authorization_boundary": "Spring Boot",
+                "cortex_search_is_authorization_boundary": False,
+                "dual_auth_case_subtypes": list(DUAL_AUTH_CASE_SUBTYPES),
+                "ldap_roles": user.get("ldap_roles", []),
+            })
 
-    with tab3:
-        st.json({
-            "document": {
-                "DOC_ID": "DOC-10004",
-                "ATTACHMENT_ID": "890786546",
-                "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
-            },
-            "relationship": {
-                "ATTACHMENT_ID": "→ SBS.ATTACHMENT.ATTACHMENT_ID",
-                "TRACKING_ID": "→ MR_CASE.TRACKING_ID",
-                "structured_case_metadata": "→ SBS case tables",
-            },
-            "search_content": {
-                "CONTENT_TEXT": "→ parsed document text",
-            },
-            "governance": {
-                "DOC_STATE": "→ entitlement / jurisdiction",
-                "BUSINESS_AREA": "→ entitlement",
-                "PII": "→ full or search-safe representation via SBS join",
-            },
-        })
+        with tab3:
+            st.json({
+                "document": {
+                    "DOC_ID": "DOC-10004",
+                    "ATTACHMENT_ID": "890786546",
+                    "FILE_PATH": "SD/Exams/890786546/accident_detail_sd.pdf",
+                },
+                "relationship": {
+                    "ATTACHMENT_ID": "→ SBS.ATTACHMENT.ATTACHMENT_ID",
+                    "TRACKING_ID": "→ MR_CASE.TRACKING_ID",
+                    "structured_case_metadata": "→ SBS case tables",
+                },
+                "search_content": {
+                    "CONTENT_TEXT": "→ parsed document text",
+                },
+                "governance": {
+                    "DOC_STATE": "→ entitlement / jurisdiction",
+                    "BUSINESS_AREA": "→ entitlement",
+                    "LOI_LIST": "→ aggregated across LOI/LOB tables",
+                },
+            })
