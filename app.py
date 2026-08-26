@@ -857,17 +857,36 @@ if st.session_state.results is not None:
 
         table_html = "<table class='results-table'><thead><tr>"
         table_html += "<th>Attachment ID</th><th>Tracking ID</th>"
+        
+        # NEW: Download column
+        table_html += "<th>Download</th>"
+        
         for col in st.session_state.visible_columns:
             table_html += f"<th>{escape(col.replace('_', ' '))}</th>"
         table_html += "</tr></thead><tbody>"
-
+        
         for r in results:
             table_html += "<tr>"
             table_html += f"<td>{escape(r['ATTACHMENT_ID'])}</td>"
+        
+            # Tracking ID clickable link
             table_html += (
                 f"<td><span class='tracking-link' title='Opens Case Summary in V2'>"
                 f"{escape(r['TRACKING_ID'])}</span></td>"
             )
+        
+            # NEW: Download column (pseudo-button)
+            if r["CAN_DOWNLOAD"]:
+                table_html += (
+                    "<td>"
+                    f"<a href='#dl_{r['DOC_ID']}' class='tracking-link' "
+                    "title='Scroll to download button'>⬇ Download</a>"
+                    "</td>"
+                )
+            else:
+                table_html += "<td><span class='badge-denied'>RESTRICTED</span></td>"
+        
+            # Remaining columns
             for col in st.session_state.visible_columns:
                 val = r.get(col)
                 if col == "SNIPPET":
@@ -879,10 +898,12 @@ if st.session_state.results is not None:
                 else:
                     cell = escape(str(val)) if val is not None else "N/A"
                 table_html += f"<td>{cell}</td>"
+        
             table_html += "</tr>"
-
+        
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
+
 
         st.markdown("#### Actions")
         for r in results:
