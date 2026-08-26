@@ -702,12 +702,21 @@ if st.session_state.current_payload:
         st.json(st.session_state.current_payload)
 import pandas as pd
 
+import pandas as pd
+
+# ==============================================================================
+# SEARCH RESULTS — TABLE VIEW WITH DOWNLOAD LINKS
+# ==============================================================================
+
 if st.session_state.search_results is not None:
     results = st.session_state.search_results
+    st.subheader(f"Search Results ({len(results)} matches found)")
 
     if not results:
         st.info("No documents match your search criteria or entitlement boundary.")
+
     else:
+        # Build table
         df = pd.DataFrame([
             {
                 "DOC_ID": r["DOC_ID"],
@@ -718,13 +727,27 @@ if st.session_state.search_results is not None:
                 "State": r["STATE"],
                 "Investigator": r["INVESTIGATOR_DISPLAY"],
                 "Entity": r["ENTITY_NAME_DISPLAY"],
-                "Summary": r["_doc"].get("SUMMARY", ""),   # ← your summary field
+                "Summary": r["_doc"].get("SUMMARY", ""),
                 "Snippet": r["SNIPPET"],
+                "Download": f"[Download](#{r['DOC_ID']})",   # clickable link
             }
             for r in results
         ])
 
+        # Render table
         st.dataframe(df, use_container_width=True)
+
+        # Real download buttons
+        st.subheader("Download Documents")
+
+        for idx, r in enumerate(results):
+            if st.button(f"Download {r['DOC_ID']}", key=f"dl_{idx}"):
+                allowed, msg = download_document(current_user, r["_doc"], r["_case"])
+                if allowed:
+                    st.success(msg)
+                else:
+                    st.error(msg)
+
 
 # ==============================================================================
 # 🛠 Governance / Integration Inspector
