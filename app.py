@@ -554,49 +554,34 @@ if "search_results" not in st.session_state:
 if "current_payload" not in st.session_state:
     st.session_state.current_payload = None
 
-# Sidebar Context Control
-st.sidebar.title("Security Governance")
+# Context Controls (Persona & State Jurisdiction)
+c_persona, c_state = st.columns([1, 1])
+with c_persona:
+    selected_user_key = st.selectbox(
+        "Active Persona",
+        options=list(USERS.keys()),
+        index=list(USERS.keys()).index(st.session_state.selected_user_key),
+    )
+    st.session_state.selected_user_key = selected_user_key
+    base_user = USERS[selected_user_key]
 
-# Active Persona Selector
-selected_user_key = st.sidebar.selectbox(
-    "Active Persona",
-    options=list(USERS.keys()),
-    index=list(USERS.keys()).index(st.session_state.selected_user_key),
-)
-st.session_state.selected_user_key = selected_user_key
-base_user = USERS[selected_user_key]
-
-# Dynamic Role & State Dropdowns
-available_roles = sorted(list({u["role"] for u in USERS.values()}))
 available_states = sorted(list({u["state"] for u in USERS.values()}))
 
-selected_role = st.sidebar.selectbox(
-    "User Role",
-    options=available_roles,
-    index=available_roles.index(base_user["role"]) if base_user["role"] in available_roles else 0,
-)
+with c_state:
+    selected_state = st.selectbox(
+        "State Jurisdiction",
+        options=available_states,
+        index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
+    )
 
-selected_state = st.sidebar.selectbox(
-    "State Jurisdiction",
-    options=available_states,
-    index=available_states.index(base_user["state"]) if base_user["state"] in available_states else 0,
-)
-
-# Overridden User Object for Dynamic Governance Context
+# Active User Context with Dynamic State Override
 current_user = {
     **base_user,
-    "role": selected_role,
     "state": selected_state,
 }
 
-st.sidebar.markdown("---")
-st.sidebar.markdown(f"**Allowed Areas:** {', '.join(current_user['business_areas'])}")
-st.sidebar.markdown(f"**PII Access:** {'Unmasked' if current_user['unmasked_pii'] else 'Masked'}")
-st.sidebar.markdown(f"**Download Permission:** {current_user['can_download']}")
-
 pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
 download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
-
 # Header & Context Controls on Main Page
 st.markdown(
     f"""
