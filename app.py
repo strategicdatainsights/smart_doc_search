@@ -649,9 +649,7 @@ if st.session_state.search_results is not None:
         df_data = []
         for r in results:
             url = get_download_url(current_user, r["_doc"])
-            if r["_doc"].get("LOCKED", False):
-                status = "🔒 Locked"
-            elif not current_user["can_download"]:
+            if not current_user["can_download"]:
                 status = "🚫 Restricted"
             else:
                 status = "✅ Allowed"
@@ -701,10 +699,8 @@ if st.session_state.search_results is not None:
             ba = r["BUSINESS_AREA"]
             state = r["STATE"]
             
-            if r["LOCKED"]:
-                acc_badge = '<span class="badge-locked">LOCKED</span>'
-            elif not current_user["can_download"]:
-                acc_badge = '<span class="badge-denied">NO DOWNLOAD</span>'
+            if not current_user["can_download"]:
+                acc_badge = '<span class="badge-denied">RESTRICTED</span>'
             else:
                 acc_badge = '<span class="badge-full">ACCESSIBLE</span>'
 
