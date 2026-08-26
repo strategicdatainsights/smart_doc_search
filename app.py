@@ -506,63 +506,127 @@ PII_FIELDS = {"ENTITY_NAME", "INVESTIGATOR"}
 
 st.markdown("""
 <style>
-html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
-#MainMenu, footer, header { visibility: hidden; }
-.block-container { padding-top: 0 !important; }
+
+/* --------------------------------------------------
+   Global
+-------------------------------------------------- */
+html, body, [class*="css"] {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
+}
+
+#MainMenu, footer, header {
+    visibility: hidden;
+}
+
+.block-container {
+    padding-top: 0 !important;
+}
+
+/* --------------------------------------------------
+   Top Navigation Bar
+-------------------------------------------------- */
 .sdp-nav {
-    background:#3f51b5;
-    color:white;
-    padding:10px 20px;
-    display:flex;
-    align-items:center;
-    justify-content:space-between;
-    margin-bottom:18px;
+    background: #3f51b5;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 18px;
 }
-.sdp-nav-title { font-size:18px;font-weight:500; }
+
+.sdp-nav-title {
+    font-size: 18px;
+    font-weight: 500;
+}
+
 .sdp-nav-persona {
-    background:rgba(255,255,255,.18);
-    padding:5px 12px;
-    border-radius:4px;
-    font-size:12px;
+    background: rgba(255, 255, 255, 0.18);
+    padding: 5px 12px;
+    border-radius: 4px;
+    font-size: 12px;
 }
+
+/* --------------------------------------------------
+   Badges
+-------------------------------------------------- */
 .badge-full {
-    background:#e8f5e9;
-    color:#2e7d32;
-    padding:3px 9px;
-    border-radius:12px;
-    font-size:11px;
-    font-weight:600;
+    background: #e8f5e9;
+    color: #2e7d32;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
+
 .badge-masked {
-    background:#fff3e0;
-    color:#e65100;
-    padding:3px 9px;
-    border-radius:12px;
-    font-size:11px;
-    font-weight:600;
+    background: #fff3e0;
+    color: #e65100;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
+
 .badge-denied {
-    background:#ffebee;
-    color:#c62828;
-    padding:3px 9px;
-    border-radius:12px;
-    font-size:11px;
-    font-weight:600;
+    background: #ffebee;
+    color: #c62828;
+    padding: 3px 9px;
+    border-radius: 12px;
+    font-size: 11px;
+    font-weight: 600;
 }
+
+/* --------------------------------------------------
+   Search Snippet Highlighting
+-------------------------------------------------- */
 .sdp-snippet {
-    font-style:italic;
-    color:#555;
-    display:block;
-    max-width:520px;
+    font-style: italic;
+    color: #555;
+    display: block;
+    max-width: 520px;
 }
+
 .sdp-snippet mark {
-    background:#fff59d;
-    padding:0 2px;
-    border-radius:2px;
-    font-style:normal;
+    background: #fff59d;
+    padding: 0 2px;
+    border-radius: 2px;
+    font-style: normal;
 }
+
+/* --------------------------------------------------
+   Accordion Component
+-------------------------------------------------- */
+.accordion {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    margin-bottom: 12px;
+    background: #fafafa;
+}
+
+.accordion-header {
+    padding: 10px 14px;
+    cursor: pointer;
+    font-weight: 600;
+    background: #f0f0f0;
+    border-radius: 6px;
+    user-select: none;
+}
+
+.accordion-header:hover {
+    background: #e6e6e6;
+}
+
+.accordion-content {
+    padding: 12px 14px;
+    display: none;
+    border-top: 1px solid #ddd;
+    background: #ffffff;
+}
+
 </style>
 """, unsafe_allow_html=True)
+
 
 # ==============================================================================
 # BACKEND SIMULATION (SNOWFLAKE-READY)
