@@ -704,7 +704,21 @@ if st.session_state.current_payload:
 import pandas as pd
 
 # ==============================================================================
-# SEARCH RESULTS — TABLE VIEW WITH DOWNLOAD LINKS
+# MISSING AUTHORIZATION FUNCTION
+# ==============================================================================
+
+def download_document(user, doc, case):
+    """Enforces fine-grained download permissions and document lock status."""
+    if not user["can_download"]:
+        return False, f"Access Denied: User role '{user['role']}' is restricted from downloading raw source files."
+    
+    if doc.get("LOCKED", False):
+        return False, f"Download Restricted: Document {doc['DOC_ID']} is currently locked for regulatory audit."
+    
+    return True, f"Downloading source file '{doc['FILE_PATH']}' for document {doc['DOC_ID']}..."
+
+# ==============================================================================
+# SEARCH RESULTS — TABLE VIEW WITH SINGLE DOWNLOAD CONTROL
 # ==============================================================================
 
 if st.session_state.search_results is not None:
@@ -715,6 +729,7 @@ if st.session_state.search_results is not None:
         st.info("No documents match your search criteria or entitlement boundary.")
 
     else:
+        # Simplified Dataframe (Removed duplicate "Download" column string)
         df = pd.DataFrame([
             {
                 "DOC_ID": r["DOC_ID"],
@@ -725,28 +740,26 @@ if st.session_state.search_results is not None:
                 "State": r["STATE"],
                 "Investigator": r["INVESTIGATOR_DISPLAY"],
                 "Entity": r["ENTITY_NAME_DISPLAY"],
-                "Summary": r.get("SUMMARY", ""),   # SAFE
-                "Snippet": r["SNIPPET"],
-                "Download": f"➡️ [Download {r['DOC_ID']}](#{r['DOC_ID']})",
+                "Summary": r.get("SUMMARY", ""),
             }
             for r in results
         ])
 
         st.dataframe(df, use_container_width=True)
 
-        st.subheader("Download Documents")
+        st.subheader("Document Actions")
 
+        # Render explicit download action controls cleanly
+        dl_cols = st.columns(min(len(results), 4))
         for idx, r in enumerate(results):
-            st.markdown(f"### <a name='{r['DOC_ID']}'></a>", unsafe_allow_html=True)
-            if st.button(f"Download {r['DOC_ID']}", key=f"dl_{idx}"):
-                allowed, msg = download_document(current_user, r["_doc"], r["_case"])
-                if allowed:
-                    st.success(msg)
-                else:
-                    st.error(msg)
-
-
-
+            col_target = dl_cols[idx % 4]
+            with col_target:
+                if st.button(f"📥 Download {r['DOC_ID']}", key=f"dl_{idx}"):
+                    allowed, msg = download_document(current_user, r["_doc"], r["_case"])
+                    if allowed:
+                        st.success(msg)
+                    else:
+                        st.error(msg)
 # ==============================================================================
 # 🛠 Governance / Integration Inspector
 # ==============================================================================
