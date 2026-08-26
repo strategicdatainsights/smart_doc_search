@@ -865,6 +865,7 @@ if st.session_state.results is not None:
         with btn_row[1]:
             st.button("⚙ Column Picker")
 
+        # Build HTML table
         table_html = """
 <table class='results-table'>
 <thead>
@@ -880,7 +881,10 @@ if st.session_state.results is not None:
 </thead>
 <tbody>
 """
+
         for idx, r in enumerate(results):
+            dl_key = f"dl_table_btn_{idx}"  # define key BEFORE using it
+
             table_html += "<tr>"
             table_html += f"<td>{escape(r['ATTACHMENT_ID'])}</td>"
             table_html += f"<td>{escape(r['TRACKING_ID'])}</td>"
@@ -889,27 +893,32 @@ if st.session_state.results is not None:
             table_html += f"<td>{escape(r['UPLOAD_DATE'])}</td>"
             table_html += f"<td>{escape(r['UPLOADED_BY_RESOLVED'])}</td>"
 
-            # Actions: Download only in table (visual + backend hook)
-            if r["CAN_DOWNLOAD"]:
-                table_html += f"<td><span class='actions-btn' id='dl_{idx}'>Download</span></td>"
-            else:
-                table_html += "<td><span class='badge-denied'>RESTRICTED</span></td>"
+            # Actions column — download button triggers hidden Streamlit button
+            table_html += (
+                f"<td><button onclick=\"document.getElementById('{dl_key}').click();\" "
+                "class='actions-btn'>Download</button></td>"
+            )
 
             table_html += "</tr>"
 
         table_html += "</tbody></table>"
         st.markdown(table_html, unsafe_allow_html=True)
 
-        # Real backend hook for download (per-row buttons)
-        for r in results:
-            # In real wiring, you'd use JS or per-row Streamlit buttons.
-            # Here we expose a simple per-row button below for backend testing.
-            if st.button(f"Download {r['DOC_ID']}", key=f"dl_btn_{r['DOC_ID']}"):
+        # Backend download hook for table-based download buttons
+        for idx, r in enumerate(results):
+            dl_key = f"dl_table_btn_{idx}"
+
+            # If JS triggered the hidden button
+            if st.session_state.get(dl_key):
                 ok, msg = download_document(user, r["_doc"], r["_case"])
                 if ok:
                     st.success(msg)
                 else:
                     st.error(msg)
+
+            # Invisible Streamlit button that JS will click
+            st.button("hidden", key=dl_key, help="internal", disabled=True)
+
 
 # ==============================================================================
 # GOVERNANCE / INSPECTOR (Technical Mode only)
