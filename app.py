@@ -649,6 +649,8 @@ if st.session_state.search_results is not None:
         df_data = []
         for r in results:
             url = get_download_url(current_user, r["_doc"])
+            
+            # Binary entitlement matching wireframe mockup
             if not current_user["can_download"]:
                 status = "🚫 Restricted"
             else:
@@ -664,9 +666,10 @@ if st.session_state.search_results is not None:
                 "Investigator": r["INVESTIGATOR_DISPLAY"],
                 "Entity": r["ENTITY_NAME_DISPLAY"],
                 "Access Status": status,
-                "Download Link": url,
+                # Converts None to empty string so Streamlit renders a blank cell instead of the text "None"
+                "Download Link": url if url else "",
             })
-
+            
         df = pd.DataFrame(df_data)
 
         st.dataframe(
