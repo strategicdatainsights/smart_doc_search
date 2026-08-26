@@ -757,7 +757,6 @@ if st.session_state.search_results is not None:
                             <div class="meta-row"><span class="meta-label">Case Type:</span> {case['CASE_TYPE']}</div>
                             <div class="meta-row"><span class="meta-label">Status:</span> {case['CASE_STATUS']}</div>
                             <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
-                                                        <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
                             <div class="meta-row"><span class="meta-label">Secondary Investigator:</span> {case.get('SECONDARY_INVESTIGATOR') or 'None'}</div>
                             <div class="meta-row"><span class="meta-label">Entity:</span> {r['ENTITY_NAME_DISPLAY']}</div>
                             <div class="meta-row"><span class="meta-label">LOI:</span> {r['LOI_DISPLAY']}</div>
