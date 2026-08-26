@@ -269,6 +269,16 @@ SBS_ATTACHMENTS = {
         "FILE_NAME": "cornwall_motorcycle_club_id.docx",
         "TRACKING_ID": "12355",
     },
+    "900001111": {"FILE_NAME": "providence_delivery_accident.pdf", "TRACKING_ID": "20001"},
+    "900001112": {"FILE_NAME": "roof_damage_complaint.docx", "TRACKING_ID": "20002"},
+    "900001113": {"FILE_NAME": "ocean_state_exam_findings.pdf", "TRACKING_ID": "20003"},
+    "900001114": {"FILE_NAME": "newport_rental_accident.pdf", "TRACKING_ID": "20004"},
+    "900001115": {"FILE_NAME": "unfair_claims_handling.pdf", "TRACKING_ID": "20005"},
+    "900001116": {"FILE_NAME": "atlantic_life_exam.pdf", "TRACKING_ID": "20006"},
+    "900001117": {"FILE_NAME": "cranston_fleet_accident.docx", "TRACKING_ID": "20007"},
+    "900001118": {"FILE_NAME": "pawtucket_fire_claim.pdf", "TRACKING_ID": "20008"},
+    "900001119": {"FILE_NAME": "providence_auto_exam.pdf", "TRACKING_ID": "20009"},
+    "900001120": {"FILE_NAME": "bristol_cyclist_accident.pdf", "TRACKING_ID": "20010"}
 }
 
 SBS_CASES = {
