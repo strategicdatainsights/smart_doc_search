@@ -49,7 +49,6 @@ USERS = {
 # ==============================================================================
 
 DOC_SEARCH_CONTENT = [
-    # --- Original SD / ID docs ---
     {
         "DOC_ID": "DOC-10001",
         "ATTACHMENT_ID": "890786543",
@@ -197,59 +196,6 @@ DOC_SEARCH_CONTENT = [
         "EVENT_DATE": "2020-02-08",
         "PARTIES_MENTIONED": ["Snake River Group LLC"],
     },
-    # --- Additional SD / ID docs for richer search ---
-    {
-        "DOC_ID": "DOC-SD-30001",
-        "ATTACHMENT_ID": "ATT-SD-30001",
-        "CONTENT_TEXT": "Accident near Sioux Falls involving a commercial van. Adjuster noted inconsistent statements and possible policy lapse.",
-        "FILE_PATH": "SD/Market Regulation/ATT-SD-30001/sioux_falls_commercial_van.pdf",
-        "BUSINESS_AREA": "Market Regulation",
-        "DOC_STATE": "SD",
-        "CONTENT_HASH": "sha256:sd30001",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2022-01-03",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Accident — Commercial Van near Sioux Falls",
-        "DOCUMENT_TYPE": "Accident Report",
-        "PAGE_COUNT": 4,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": False,
-        "EXTRACTION_CONFIDENCE": 0.94,
-        "KEY_PHRASES": ["commercial van", "policy lapse", "Sioux Falls"],
-        "TOPICS": ["Auto", "Accident"],
-        "SUMMARY": "Accident involving commercial van near Sioux Falls with possible policy lapse.",
-        "GEO_LOCATION": "Sioux Falls, SD",
-        "EVENT_DATE": "2022-01-01",
-        "PARTIES_MENTIONED": [],
-    },
-    {
-        "DOC_ID": "DOC-ID-30010",
-        "ATTACHMENT_ID": "ATT-ID-30010",
-        "CONTENT_TEXT": "Accident damage assessment from third-party inspector retained by Snake River Group LLC near Boise.",
-        "FILE_PATH": "ID/Exams/ATT-ID-30010/snake_river_damage_assessment.pdf",
-        "BUSINESS_AREA": "Exams",
-        "DOC_STATE": "ID",
-        "CONTENT_HASH": "sha256:id30010",
-        "IS_CURRENT": True,
-        "UPLOAD_DATE": "2022-06-01",
-        "LOCKED": False,
-        "DOCUMENT_TITLE": "Exam — Snake River Damage Assessment",
-        "DOCUMENT_TYPE": "Exam Report",
-        "PAGE_COUNT": 7,
-        "MIME_TYPE": "application/pdf",
-        "LANGUAGE": "en",
-        "HAS_IMAGES": True,
-        "HAS_TABLES": True,
-        "EXTRACTION_CONFIDENCE": 0.93,
-        "KEY_PHRASES": ["damage assessment", "Snake River Group", "Boise"],
-        "TOPICS": ["Casualty", "Exam"],
-        "SUMMARY": "Detailed damage assessment for Snake River Group accident near Boise.",
-        "GEO_LOCATION": "Boise, ID",
-        "EVENT_DATE": "2022-05-30",
-        "PARTIES_MENTIONED": ["Snake River Group LLC"],
-    },
 ]
 
 SBS_ATTACHMENTS = {
@@ -288,20 +234,6 @@ SBS_ATTACHMENTS = {
         "UPLOAD_USER": "examiner.id@doi.gov",
         "UPLOAD_TIMESTAMP": "2020-02-10T16:20:00Z",
     },
-    "ATT-SD-30001": {
-        "FILE_NAME": "sioux_falls_commercial_van.pdf",
-        "TRACKING_ID": "SD-T30001",
-        "ATTACHMENT_TYPE": "Accident Report",
-        "UPLOAD_USER": "reg.sd@state.sd.gov",
-        "UPLOAD_TIMESTAMP": "2022-01-03T09:00:00Z",
-    },
-    "ATT-ID-30010": {
-        "FILE_NAME": "snake_river_damage_assessment.pdf",
-        "TRACKING_ID": "ID-T30010",
-        "ATTACHMENT_TYPE": "Exam Report",
-        "UPLOAD_USER": "reg.id@state.id.gov",
-        "UPLOAD_TIMESTAMP": "2022-06-01T13:30:00Z",
-    },
 }
 
 SBS_CASES = {
@@ -311,21 +243,9 @@ SBS_CASES = {
         "INVESTIGATOR": "A. Miller",
         "SECONDARY_INVESTIGATOR": None,
         "ENTITY_NAME": "Prairie Plains Mutual Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Medium",
-        "RISK_CATEGORY": "Property",
-        "CASE_NOTES": "Initial complaint received; awaiting carrier response.",
-        "REGULATOR_COMMENTS": "Monitor for timely response.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Complaints",
-        "CASE_INITIATED": "2019-09-28",
-        "CASE_OPENED": "2019-10-01",
-        "CASE_CLOSED": None,
         "NAIC_GROUP_NUMBER": "9083",
         "CASE_SUBTYPE": "Inquiry",
         "LOI": "Property",
-        "DISPOSITION": None,
     },
     "12351": {
         "CASE_TYPE": "Enforcement",
@@ -333,21 +253,9 @@ SBS_CASES = {
         "INVESTIGATOR": "R. Vance",
         "SECONDARY_INVESTIGATOR": "C. Davis",
         "ENTITY_NAME": "Black Hills Mutual Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "High",
-        "RISK_CATEGORY": "Casualty",
-        "CASE_NOTES": "Formal dispute escalated to enforcement; settlement reached.",
-        "REGULATOR_COMMENTS": "Ensure corrective action implemented.",
-        "FOLLOW_UP_REQUIRED": False,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Enforcement",
-        "CASE_INITIATED": "2019-12-18",
-        "CASE_OPENED": "2019-12-20",
-        "CASE_CLOSED": "2020-01-15",
         "NAIC_GROUP_NUMBER": "8056",
         "CASE_SUBTYPE": "Investigations",
         "LOI": "Casualty",
-        "DISPOSITION": "Settled",
     },
     "12352": {
         "CASE_TYPE": "Complaints",
@@ -355,21 +263,9 @@ SBS_CASES = {
         "INVESTIGATOR": "A. Miller",
         "SECONDARY_INVESTIGATOR": None,
         "ENTITY_NAME": "Dakota Plains Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Low",
-        "RISK_CATEGORY": "Auto",
-        "CASE_NOTES": "Vehicle loss complaint; documentation requested.",
-        "REGULATOR_COMMENTS": "Awaiting carrier documentation.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Complaints",
-        "CASE_INITIATED": "2020-01-03",
-        "CASE_OPENED": "2020-01-05",
-        "CASE_CLOSED": None,
         "NAIC_GROUP_NUMBER": "1234",
         "CASE_SUBTYPE": "Inquiry",
         "LOI": "Auto",
-        "DISPOSITION": None,
     },
     "12345": {
         "CASE_TYPE": "Market Conduct Exams",
@@ -377,21 +273,9 @@ SBS_CASES = {
         "INVESTIGATOR": "C. Davis",
         "SECONDARY_INVESTIGATOR": "A. Miller",
         "ENTITY_NAME": "Missouri River Life Underwriters",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "High",
-        "RISK_CATEGORY": "Life",
-        "CASE_NOTES": "Exam focusing on life claim handling and beneficiary practices.",
-        "REGULATOR_COMMENTS": "Preliminary findings indicate documentation gaps.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Exams",
-        "CASE_INITIATED": "2020-01-20",
-        "CASE_OPENED": "2020-01-22",
-        "CASE_CLOSED": None,
         "NAIC_GROUP_NUMBER": "5678",
         "CASE_SUBTYPE": "Market Conduct",
         "LOI": "Life",
-        "DISPOSITION": None,
     },
     "12355": {
         "CASE_TYPE": "Market Conduct Exams",
@@ -399,242 +283,109 @@ SBS_CASES = {
         "INVESTIGATOR": "C. Davis",
         "SECONDARY_INVESTIGATOR": None,
         "ENTITY_NAME": "Snake River Group LLC",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Medium",
-        "RISK_CATEGORY": "Casualty",
-        "CASE_NOTES": "Exam completed; casualty claim handling reviewed.",
-        "REGULATOR_COMMENTS": "No further action required.",
-        "FOLLOW_UP_REQUIRED": False,
-        "CASE_REGION": "West",
-        "CASE_DIVISION": "Exams",
-        "CASE_INITIATED": "2020-02-08",
-        "CASE_OPENED": "2020-02-10",
-        "CASE_CLOSED": "2020-03-01",
         "NAIC_GROUP_NUMBER": "7777",
         "CASE_SUBTYPE": "Market Conduct",
         "LOI": "Casualty",
-        "DISPOSITION": "Dismissed",
-    },
-    "SD-T30001": {
-        "CASE_TYPE": "Market Regulation",
-        "CASE_STATUS": "Open",
-        "INVESTIGATOR": "A. Miller",
-        "SECONDARY_INVESTIGATOR": "J. Reynolds",
-        "ENTITY_NAME": "Prairie Plains Mutual Insurance Company",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "Medium",
-        "RISK_CATEGORY": "Auto",
-        "CASE_NOTES": "Commercial van accident; policy lapse under review.",
-        "REGULATOR_COMMENTS": "Request underwriting file.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "Midwest",
-        "CASE_DIVISION": "Market Regulation",
-        "CASE_INITIATED": "2022-01-02",
-        "CASE_OPENED": "2022-01-03",
-        "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "9083",
-        "CASE_SUBTYPE": "Accident",
-        "LOI": "Auto",
-        "DISPOSITION": None,
-    },
-    "ID-T30010": {
-        "CASE_TYPE": "Market Conduct Exams",
-        "CASE_STATUS": "Under Review",
-        "INVESTIGATOR": "C. Davis",
-        "SECONDARY_INVESTIGATOR": "R. Vance",
-        "ENTITY_NAME": "Snake River Group LLC",
-        "ENTITY_TYPE": "Insurer",
-        "CASE_PRIORITY": "High",
-        "RISK_CATEGORY": "Casualty",
-        "CASE_NOTES": "Damage assessment and claim handling under exam.",
-        "REGULATOR_COMMENTS": "Focus on timeliness and documentation.",
-        "FOLLOW_UP_REQUIRED": True,
-        "CASE_REGION": "West",
-        "CASE_DIVISION": "Exams",
-        "CASE_INITIATED": "2022-05-30",
-        "CASE_OPENED": "2022-06-01",
-        "CASE_CLOSED": None,
-        "NAIC_GROUP_NUMBER": "7777",
-        "CASE_SUBTYPE": "Market Conduct",
-        "LOI": "Casualty",
-        "DISPOSITION": None,
     },
 }
-
-# ==============================================================================
-# FIELD / PAYLOAD CONFIGURATION (DOCUMENT-ONLY FOR CORTEX)
-# ==============================================================================
 
 FIELD_MATRIX = {
-    "Market Regulation": {
-        "base": [
-            "DOC_ID",
-            "ATTACHMENT_ID",
-            "CONTENT_TEXT",
-            "BUSINESS_AREA",
-            "DOC_STATE",
-            "IS_CURRENT",
-        ],
-    },
-    "Complaints": {
-        "base": [
-            "DOC_ID",
-            "ATTACHMENT_ID",
-            "CONTENT_TEXT",
-            "BUSINESS_AREA",
-            "DOC_STATE",
-            "IS_CURRENT",
-        ],
-    },
-    "Exams": {
-        "base": [
-            "DOC_ID",
-            "ATTACHMENT_ID",
-            "CONTENT_TEXT",
-            "BUSINESS_AREA",
-            "DOC_STATE",
-            "IS_CURRENT",
-        ],
-    },
+    "Market Regulation": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
+    "Complaints": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
+    "Exams": {"base": ["DOC_ID", "ATTACHMENT_ID", "CONTENT_TEXT", "BUSINESS_AREA", "DOC_STATE", "IS_CURRENT"]},
 }
-
-PII_FIELDS = {"ENTITY_NAME", "INVESTIGATOR"}
-
-# ==============================================================================
-# CSS
-# ==============================================================================
 
 st.markdown("""
 <style>
+html, body, [class*="css"] { font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important; }
+#MainMenu, footer, header { visibility: hidden; }
+.block-container { padding-top: 0 !important; }
 
-/* --------------------------------------------------
-   Global
--------------------------------------------------- */
-html, body, [class*="css"] {
-    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
-}
-
-#MainMenu, footer, header {
-    visibility: hidden;
-}
-
-.block-container {
-    padding-top: 0 !important;
-}
-
-/* --------------------------------------------------
-   Top Navigation Bar
--------------------------------------------------- */
 .sdp-nav {
-    background: #3f51b5;
-    color: white;
-    padding: 10px 20px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 18px;
+    background:#3f51b5;
+    color:white;
+    padding:10px 20px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-bottom:18px;
 }
-
-.sdp-nav-title {
-    font-size: 18px;
-    font-weight: 500;
-}
-
+.sdp-nav-title { font-size:18px;font-weight:500; }
 .sdp-nav-persona {
-    background: rgba(255, 255, 255, 0.18);
-    padding: 5px 12px;
-    border-radius: 4px;
-    font-size: 12px;
+    background:rgba(255,255,255,.18);
+    padding:5px 12px;
+    border-radius:4px;
+    font-size:12px;
 }
-
-/* --------------------------------------------------
-   Badges
--------------------------------------------------- */
 .badge-full {
-    background: #e8f5e9;
-    color: #2e7d32;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
+    background:#e8f5e9;
+    color:#2e7d32;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
 }
-
 .badge-masked {
-    background: #fff3e0;
-    color: #e65100;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
+    background:#fff3e0;
+    color:#e65100;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
 }
-
 .badge-denied {
-    background: #ffebee;
-    color: #c62828;
-    padding: 3px 9px;
-    border-radius: 12px;
-    font-size: 11px;
-    font-weight: 600;
+    background:#ffebee;
+    color:#c62828;
+    padding:3px 9px;
+    border-radius:12px;
+    font-size:11px;
+    font-weight:600;
 }
-
-/* --------------------------------------------------
-   Search Snippet Highlighting
--------------------------------------------------- */
 .sdp-snippet {
-    font-style: italic;
-    color: #555;
-    display: block;
-    max-width: 520px;
+    font-style:italic;
+    color:#555;
+    display:inline;
 }
-
 .sdp-snippet mark {
-    background: #fff59d;
-    padding: 0 2px;
-    border-radius: 2px;
-    font-style: normal;
+    background:#fff59d;
+    padding:0 2px;
+    border-radius:2px;
+    font-style:normal;
 }
-
-/* --------------------------------------------------
-   Accordion Component
--------------------------------------------------- */
 .accordion {
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    margin-bottom: 12px;
-    background: #fafafa;
+    border:1px solid #ddd;
+    border-radius:6px;
+    margin-bottom:12px;
+    background:#fafafa;
 }
-
 .accordion-header {
-    padding: 10px 14px;
-    cursor: pointer;
-    font-weight: 600;
-    background: #f0f0f0;
-    border-radius: 6px;
-    user-select: none;
+    padding:10px 14px;
+    cursor:pointer;
+    font-weight:600;
+    background:#f0f0f0;
+    border-radius:6px;
+    user-select:none;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
 }
-
-.accordion-header:hover {
-    background: #e6e6e6;
-}
-
+.accordion-header:hover { background:#e6e6e6; }
+.accordion-header-left { display:flex; flex-direction:column; gap:4px; }
+.accordion-header-main { font-weight:600; }
+.accordion-header-sub { font-size:12px; color:#444; }
+.accordion-header-right { margin-left:12px; }
 .accordion-content {
-    padding: 12px 14px;
-    display: none;
-    border-top: 1px solid #ddd;
-    background: #ffffff;
+    padding:12px 14px;
+    display:none;
+    border-top:1px solid #ddd;
+    background:#ffffff;
 }
-
+.meta-section { margin-bottom:10px; }
+.meta-section h4 { margin:0 0 6px 0; font-size:13px; font-weight:600; }
+.meta-row { font-size:12px; margin-bottom:2px; }
+.meta-label { font-weight:600; }
 </style>
 """, unsafe_allow_html=True)
-
-
-# ==============================================================================
-# BACKEND SIMULATION (SNOWFLAKE-READY)
-# ==============================================================================
-
-# ==============================================================================
-# BACKEND SIMULATION (SNOWFLAKE-READY)
-# ==============================================================================
 
 def mask_value(value):
     if not value:
@@ -652,7 +403,6 @@ def mask_value(value):
             masked.append(word[:1] + "*" * max(len(word) - 1, 1))
     return " ".join(masked)
 
-
 def mask_text(text, entity_name=None):
     if not text:
         return text
@@ -663,7 +413,6 @@ def mask_text(text, entity_name=None):
     text = re.sub(r"\b\d{3}-\d{2}-\d{4}\b", "***-**-****", text)
     return text
 
-
 def authorized_documents(user, selected_ba):
     return [
         d for d in DOC_SEARCH_CONTENT
@@ -672,7 +421,6 @@ def authorized_documents(user, selected_ba):
         and selected_ba in user["business_areas"]
         and d["IS_CURRENT"]
     ]
-
 
 def build_search_payload(user, query, selected_ba, filters):
     allowed = FIELD_MATRIX[selected_ba]["base"]
@@ -691,7 +439,6 @@ def build_search_payload(user, query, selected_ba, filters):
         "authorization_boundary": "Spring Boot",
         "raw_document_access": "backend controlled",
     }
-
 
 def run_search(user, query, selected_ba, filters):
     docs = authorized_documents(user, selected_ba)
@@ -717,8 +464,6 @@ def run_search(user, query, selected_ba, filters):
             case["CASE_STATUS"],
             case["CASE_SUBTYPE"],
             case["LOI"],
-            case.get("CASE_NOTES") or "",
-            case.get("REGULATOR_COMMENTS") or "",
         ]
         haystack = " ".join(haystack_parts).lower()
 
@@ -796,7 +541,6 @@ def run_search(user, query, selected_ba, filters):
 
     return results
 
-
 def download_document(user, doc_row, case_row):
     CONFIDENTIAL_CASE_TYPES = {
         "Enforcement",
@@ -819,127 +563,189 @@ def download_document(user, doc_row, case_row):
         return False, "Download denied: business-area entitlement."
     return True, f"Authorized download: {doc_row['DOC_ID']} / {doc_row['FILE_PATH']}"
 
+def accordion_result_card(r, user):
+    content_id = f"acc_content_{r['DOC_ID']}"
+    header_html = f"""
+    <div class="accordion">
+      <div class="accordion-header" onclick="
+        var c = document.getElementById('{content_id}');
+        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
+      ">
+        <div class="accordion-header-left">
+          <div class="accordion-header-main">
+            DOC_ID: {r['DOC_ID']} · Tracking ID: {r['TRACKING_ID']}
+          </div>
+          <div class="accordion-header-sub">
+            {escape(r['DOCUMENT_TITLE'])}
+          </div>
+          <div class="accordion-header-sub">
+            <span class="sdp-snippet">\"{r['SNIPPET']}\"</span>
+          </div>
+        </div>
+        <div class="accordion-header-right">
+    """
+
+    if r["CAN_DOWNLOAD"]:
+        header_html += f"""<span class="badge-full">DOWNLOAD ENABLED</span>"""
+    else:
+        header_html += """<span class="badge-denied">RESTRICTED</span>"""
+
+    header_html += """
+        </div>
+      </div>
+    """
+
+    body_html = f"""
+      <div class="accordion-content" id="{content_id}">
+        <div class="meta-section">
+          <h4>Document Metadata</h4>
+          <div class="meta-row"><span class="meta-label">DOC_ID:</span> {r['DOC_ID']}</div>
+          <div class="meta-row"><span class="meta-label">Title:</span> {escape(r['DOCUMENT_TITLE'])}</div>
+          <div class="meta-row"><span class="meta-label">Type:</span> {r['DOCUMENT_TYPE']}</div>
+          <div class="meta-row"><span class="meta-label">Date:</span> {r['DOCUMENT_DATE']}</div>
+          <div class="meta-row"><span class="meta-label">State:</span> {r['STATE']}</div>
+          <div class="meta-row"><span class="meta-label">Business Area:</span> {r['BUSINESS_AREA']}</div>
+          <div class="meta-row"><span class="meta-label">Locked:</span> {r['LOCKED']}</div>
+        </div>
+
+        <div class="meta-section">
+          <h4>Attachment Metadata</h4>
+          <div class="meta-row"><span class="meta-label">Attachment ID:</span> {r['ATTACHMENT_ID']}</div>
+          <div class="meta-row"><span class="meta-label">Tracking ID:</span> {r['TRACKING_ID']}</div>
+          <div class="meta-row"><span class="meta-label">File Name:</span> {escape(r['FILE_NAME'])}</div>
+          <div class="meta-row"><span class="meta-label">Attachment Type:</span> {SBS_ATTACHMENTS[r['ATTACHMENT_ID']]['ATTACHMENT_TYPE']}</div>
+          <div class="meta-row"><span class="meta-label">Upload User:</span> {SBS_ATTACHMENTS[r['ATTACHMENT_ID']]['UPLOAD_USER']}</div>
+          <div class="meta-row"><span class="meta-label">Upload Timestamp:</span> {SBS_ATTACHMENTS[r['ATTACHMENT_ID']]['UPLOAD_TIMESTAMP']}</div>
+        </div>
+
+        <div class="meta-section">
+          <h4>Case Metadata</h4>
+          <div class="meta-row"><span class="meta-label">Case Type:</span> {r['CASE_TYPE']}</div>
+          <div class="meta-row"><span class="meta-label">Status:</span> {r['CASE_STATUS']}</div>
+          <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
+          <div class="meta-row"><span class="meta-label">Entity:</span> {r['ENTITY_NAME_DISPLAY']}</div>
+          <div class="meta-row"><span class="meta-label">LOI:</span> {r['LOI_DISPLAY']}</div>
+          <div class="meta-row"><span class="meta-label">Case Subtype:</span> {SBS_CASES[r['TRACKING_ID']]['CASE_SUBTYPE']}</div>
+          <div class="meta-row"><span class="meta-label">NAIC Group:</span> {SBS_CASES[r['TRACKING_ID']]['NAIC_GROUP_NUMBER']}</div>
+        </div>
+
+        <div class="meta-section">
+          <h4>Raw Payload</h4>
+          <div class="meta-row"><span class="meta-label">Document ID:</span> {r['DOC_ID']}</div>
+          <div class="meta-row"><span class="meta-label">Content Hash:</span> {r['_doc']['CONTENT_HASH']}</div>
+          <div class="meta-row"><span class="meta-label">MIME Type:</span> {r['_doc']['MIME_TYPE']}</div>
+        </div>
+      </div>
+    </div>
+    """
+    return header_html + body_html
+
 # ==============================================================================
-# ACCORDION HELPER (NEW)
+# MAIN APPLICATION & USER INTERFACE
 # ==============================================================================
 
-def accordion_section(title, rows, key):
-    content_id = f"acc_content_{key}"
-    html_rows = "".join([f"<p><strong>{k}:</strong> {v}</p>" for k, v in rows.items()])
-    st.markdown(f"""
-    <div class="accordion">
-        <div class="accordion-header" onclick="
-            var c = document.getElementById('{content_id}');
-            c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-        ">
-            {title}
-        </div>
-        <div class="accordion-content" id="{content_id}">
-            {html_rows}
+if "selected_user_key" not in st.session_state:
+    st.session_state.selected_user_key = list(USERS.keys())[0]
+if "search_results" not in st.session_state:
+    st.session_state.search_results = None
+if "current_payload" not in st.session_state:
+    st.session_state.current_payload = None
+
+st.sidebar.title("Security Governance")
+selected_user_key = st.sidebar.selectbox(
+    "Active Persona",
+    options=list(USERS.keys()),
+    index=list(USERS.keys()).index(st.session_state.selected_user_key),
+)
+st.session_state.selected_user_key = selected_user_key
+current_user = USERS[selected_user_key]
+
+st.sidebar.markdown("---")
+st.sidebar.markdown(f"**Role:** `{current_user['role']}`")
+st.sidebar.markdown(f"**State Jurisdiction:** `{current_user['state']}`")
+st.sidebar.markdown(f"**Allowed Areas:** {', '.join(current_user['business_areas'])}")
+st.sidebar.markdown(f"**PII Access:** {'Unmasked' if current_user['unmasked_pii'] else 'Masked'}")
+st.sidebar.markdown(f"**Download Permission:** {current_user['can_download']}")
+
+pii_badge = '<span class="badge-full">UNMASKED PII</span>' if current_user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
+download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if current_user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
+
+st.markdown(
+    f"""
+    <div class="sdp-nav">
+        <div class="sdp-nav-title">📄 Smart Document Platform — SD / ID</div>
+        <div class="sdp-nav-persona">
+            {current_user['username']} · {current_user['role']} · {current_user['state']} · {pii_badge} · {download_badge}
         </div>
     </div>
-    """, unsafe_allow_html=True)
+    """,
+    unsafe_allow_html=True,
+)
 
-# ==============================================================================
-# SESSION
-# ==============================================================================
+st.title("Document Search & Governance Engine")
 
-if "selected_user" not in st.session_state:
-    st.session_state.selected_user = list(USERS)[0]
-if "results" not in st.session_state:
-    st.session_state.results = None
-if "payload" not in st.session_state:
-    st.session_state.payload = None
+col1, col2 = st.columns([1, 2])
+with col1:
+    selected_ba = st.selectbox(
+        "Business Area",
+        options=current_user["business_areas"],
+        help="Select business area entitlement context.",
+    )
+with col2:
+    search_query = st.text_input(
+        "Search Term",
+        placeholder="Enter keywords (e.g., accident, Sioux Falls, dispute)...",
+    )
 
-user = USERS[st.session_state.selected_user]
+with st.expander("Advanced Metadata Filters"):
+    f_col1, f_col2, f_col3 = st.columns(3)
+    with f_col1:
+        f_case_type = st.text_input("Case Type Filter")
+        f_status = st.text_input("Case Status Filter")
+        f_tracking = st.text_input("Tracking ID")
+    with f_col2:
+        f_investigator = st.text_input("Investigator")
+        f_entity = st.text_input("Entity Name")
+        f_naic = st.text_input("NAIC Group Number")
+    with f_col3:
+        f_subtype = st.text_input("Case Subtype")
+        f_loi = st.text_input("Line of Insurance (LOI)")
 
-# ==============================================================================
-# HEADER
-# ==============================================================================
+filters = {
+    "case_type": f_case_type or None,
+    "status": f_status or None,
+    "investigator": f_investigator or None,
+    "entity": f_entity or None,
+    "tracking_id": f_tracking or None,
+    "naic_group": f_naic or None,
+    "case_subtype": f_subtype or None,
+    "loi": f_loi or None,
+}
 
-pii_badge = '<span class="badge-full">UNMASKED PII</span>' if user["unmasked_pii"] else '<span class="badge-masked">MASKED PII</span>'
-download_badge = '<span class="badge-full">DOWNLOAD ENABLED</span>' if user["can_download"] else '<span class="badge-denied">DOWNLOAD DENIED</span>'
+if st.button("Execute Search", type="primary"):
+    st.session_state.search_results = run_search(current_user, search_query, selected_ba, filters)
+    st.session_state.current_payload = build_search_payload(current_user, search_query, selected_ba, filters)
 
-st.markdown(f"""
-<div class="sdp-nav">
-  <span class="sdp-nav-title">Smart Document Platform — SD / ID</span>
-  <span class="sdp-nav-persona">
-    {user['username']} · {user['role']} · {user['state']} · {pii_badge} · {download_badge}
-  </span>
-</div>
-""", unsafe_allow_html=True)
+if st.session_state.current_payload:
+    with st.expander("🔍 View Generated Cortex Search Payload (JSON)"):
+        st.json(st.session_state.current_payload)
 
-# ==============================================================================
-# RESULTS (WITH ACCORDIONS)
-# ==============================================================================
-
-if st.session_state.results is not None:
-    results = st.session_state.results
-    st.markdown(f"### Search Results `{len(results)}`")
-
+if st.session_state.search_results is not None:
+    results = st.session_state.search_results
+    st.subheader(f"Search Results ({len(results)} matches found)")
     if not results:
-        st.info("No documents match the search and authorization criteria.")
+        st.info("No documents match your search criteria or entitlement boundary.")
     else:
-        for r in results:
-            with st.container(border=True):
+        for idx, res in enumerate(results):
+            card_html = accordion_result_card(res, current_user)
+            st.markdown(card_html, unsafe_allow_html=True)
 
-                # Document summary row
-                cols = st.columns([1.3, 1.1, 2.0, 3.5, 1.2])
-                cols[0].markdown(f"**DOC_ID**  \n{r['DOC_ID']}")
-                cols[1].markdown(f"**Tracking ID**  \n{r['TRACKING_ID']}")
-                cols[2].markdown(f"**Document**  \n{r['DOCUMENT_TITLE']}")
-                cols[3].markdown(
-                    f"**Content**  \n<span class='sdp-snippet'>\"{r['SNIPPET']}\"</span>",
-                    unsafe_allow_html=True,
-                )
-
-                # Download button
-                with cols[4]:
-                    if r["CAN_DOWNLOAD"]:
-                        if st.button("Download", key=f"dl_{r['DOC_ID']}"):
-                            ok, msg = download_document(user, r["_doc"], r["_case"])
-                            if ok:
-                                st.success(msg)
-                            else:
-                                st.error(msg)
+            btn_col1, btn_col2 = st.columns([1, 4])
+            with btn_col1:
+                if st.button(f"Download {res['DOC_ID']}", key=f"dl_{res['DOC_ID']}_{idx}"):
+                    allowed, msg = download_document(current_user, res["_doc"], res["_case"])
+                    if allowed:
+                        st.success(msg)
                     else:
-                        st.markdown('<span class="badge-denied">RESTRICTED</span>', unsafe_allow_html=True)
-
-                # Accordion: Document Metadata
-                accordion_section(
-                    "Document Metadata",
-                    {
-                        "DOC_ID": r["DOC_ID"],
-                        "Document Title": r["DOCUMENT_TITLE"],
-                        "Document Type": r["DOCUMENT_TYPE"],
-                        "Document Date": r["DOCUMENT_DATE"],
-                        "State": r["STATE"],
-                        "Business Area": r["BUSINESS_AREA"],
-                        "Locked": r["LOCKED"],
-                    },
-                    key=f"docmeta_{r['DOC_ID']}"
-                )
-
-                # Accordion: Attachment Metadata
-                accordion_section(
-                    "Attachment Metadata",
-                    {
-                        "Attachment ID": r["ATTACHMENT_ID"],
-                        "Tracking ID": r["TRACKING_ID"],
-                        "File Name": r["FILE_NAME"],
-                    },
-                    key=f"attach_{r['DOC_ID']}"
-                )
-
-                # Accordion: Case Metadata
-                accordion_section(
-                    "Case Metadata",
-                    {
-                        "Case Type": r["CASE_TYPE"],
-                        "Case Status": r["CASE_STATUS"],
-                        "Investigator": r["INVESTIGATOR_DISPLAY"],
-                        "Entity": r["ENTITY_NAME_DISPLAY"],
-                        "Line of Insurance": r["LOI_DISPLAY"],
-                    },
-                    key=f"case_{r['DOC_ID']}"
-                )
+                        st.error(msg)
+            st.markdown("---")
