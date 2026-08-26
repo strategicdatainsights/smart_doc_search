@@ -414,11 +414,18 @@ def mask_value(value):
 def mask_text(text, entity_name=None):
     if not text:
         return text
+
     if entity_name:
         text = re.sub(re.escape(entity_name), mask_value(entity_name), text)
+
+    # Mask emails
     text = re.sub(r"\b[\w.+-]+@[\w.-]+\.\w+\b", "[EMAIL MASKED]", text)
-        text = re.sub(r"\b(?:\d{3}-\d{2}-\d{4})\b", "***-**-****", text)
+
+    # Mask SSNs
+    text = re.sub(r"\b(?:\d{3}-\d{2}-\d{4})\b", "***-**-****", text)
+
     return text
+
 
 def authorized_documents(user, selected_ba):
     return [
