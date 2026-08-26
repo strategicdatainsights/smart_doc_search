@@ -411,38 +411,40 @@ def accordion_result_card(r, user):
 
     acc_id = f"single_acc_{doc_id}"
 
-    return f"""
-    <div class="accordion">
-        <div class="accordion-header" onclick="
-            var c = document.getElementById('{acc_id}');
-            c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-        ">
-            <div class="accordion-header-left">
-                <div class="accordion-header-main">{title}</div>
-                <div class="accordion-header-sub">
-                    DOC_ID: {doc_id} · {dtype} · {date} · {ba} · {state}
-                </div>
-            </div>
-        </div>
-
-        <div class="accordion-content" id="{acc_id}">
-            <div class="meta-section">
-                <div class="meta-row"><span class="meta-label">Title:</span> {title}</div>
-                <div class="meta-row"><span class="meta-label">Type:</span> {dtype}</div>
-                <div class="meta-row"><span class="meta-label">Upload Date:</span> {date}</div>
-                <div class="meta-row"><span class="meta-label">Business Area:</span> {ba}</div>
-                <div class="meta-row"><span class="meta-label">State:</span> {state}</div>
-                <div class="meta-row"><span class="meta-label">Investigator:</span> {investigator}</div>
-                <div class="meta-row"><span class="meta-label">Entity:</span> {entity}</div>
-            </div>
-
-            <div class="meta-section">
-                <h4>Snippet</h4>
-                <div class="meta-row">{snippet}</div>
+    html = f"""
+<div class="accordion">
+    <div class="accordion-header" onclick="
+        var c = document.getElementById('{acc_id}');
+        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
+    ">
+        <div class="accordion-header-left">
+            <div class="accordion-header-main">{title}</div>
+            <div class="accordion-header-sub">
+                DOC_ID: {doc_id} · {dtype} · {date} · {ba} · {state}
             </div>
         </div>
     </div>
-    """
+
+    <div class="accordion-content" id="{acc_id}">
+        <div class="meta-section">
+            <div class="meta-row"><span class="meta-label">Title:</span> {title}</div>
+            <div class="meta-row"><span class="meta-label">Type:</span> {dtype}</div>
+            <div class="meta-row"><span class="meta-label">Upload Date:</span> {date}</div>
+            <div class="meta-row"><span class="meta-label">Business Area:</span> {ba}</div>
+            <div class="meta-row"><span class="meta-label">State:</span> {state}</div>
+            <div class="meta-row"><span class="meta-label">Investigator:</span> {investigator}</div>
+            <div class="meta-row"><span class="meta-label">Entity:</span> {entity}</div>
+        </div>
+
+        <div class="meta-section">
+            <h4>Snippet</h4>
+            <div class="meta-row">{snippet}</div>
+        </div>
+    </div>
+</div>
+"""
+    return html
+
 
 
 def mask_value(value):
