@@ -700,143 +700,31 @@ if st.button("Execute Search", type="primary"):
 if st.session_state.current_payload:
     with st.expander("🔍 View Generated Cortex Search Payload (JSON)"):
         st.json(st.session_state.current_payload)
-# ==============================================================================
-# SEARCH RESULTS — SINGLE ACCORDION + THREE OLD ACCORDIONS
-# ==============================================================================
+import pandas as pd
 
 if st.session_state.search_results is not None:
     results = st.session_state.search_results
-    st.subheader(f"Search Results ({len(results)} matches found)")
 
     if not results:
         st.info("No documents match your search criteria or entitlement boundary.")
-
     else:
-        for idx, r in enumerate(results):
+        df = pd.DataFrame([
+            {
+                "DOC_ID": r["DOC_ID"],
+                "Title": r["DOCUMENT_TITLE"],
+                "Type": r["DOCUMENT_TYPE"],
+                "Upload Date": r["DOCUMENT_DATE"],
+                "Business Area": r["BUSINESS_AREA"],
+                "State": r["STATE"],
+                "Investigator": r["INVESTIGATOR_DISPLAY"],
+                "Entity": r["ENTITY_NAME_DISPLAY"],
+                "Summary": r["_doc"].get("SUMMARY", ""),   # ← your summary field
+                "Snippet": r["SNIPPET"],
+            }
+            for r in results
+        ])
 
-            # --------------------------------------------------------------
-            # 1) NEW SINGLE ACCORDION CARD (accordion_result_card)
-            # --------------------------------------------------------------
-            card_html = accordion_result_card(r, current_user)
-            st.markdown(card_html, unsafe_allow_html=True)
-
-            # --------------------------------------------------------------
-            # 2) OLD THREE ACCORDIONS (Document / Attachment / Case)
-            # --------------------------------------------------------------
-
-            # Document Metadata Accordion
-            doc_acc_id = f"doc_acc_{r['DOC_ID']}"
-            st.markdown(
-                f"""
-                <div class="accordion">
-                    <div class="accordion-header" onclick="
-                        var c = document.getElementById('{doc_acc_id}');
-                        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-                    ">
-                        <div class="accordion-header-left">
-                            <div class="accordion-header-main">Document Metadata</div>
-                            <div class="accordion-header-sub">DOC_ID: {r['DOC_ID']}</div>
-                        </div>
-                    </div>
-                    <div class="accordion-content" id="{doc_acc_id}">
-                        <div class="meta-section">
-                            <div class="meta-row"><span class="meta-label">DOC_ID:</span> {r['_doc']['DOC_ID']}</div>
-                            <div class="meta-row"><span class="meta-label">Title:</span> {escape(r['DOCUMENT_TITLE'])}</div>
-                            <div class="meta-row"><span class="meta-label">Type:</span> {r['DOCUMENT_TYPE']}</div>
-                            <div class="meta-row"><span class="meta-label">Upload Date:</span> {r['DOCUMENT_DATE']}</div>
-                            <div class="meta-row"><span class="meta-label">State:</span> {r['STATE']}</div>
-                            <div class="meta-row"><span class="meta-label">Business Area:</span> {r['BUSINESS_AREA']}</div>
-                            <div class="meta-row"><span class="meta-label">Locked:</span> {r['LOCKED']}</div>
-                            <div class="meta-row"><span class="meta-label">Content Hash:</span> {r['_doc']['CONTENT_HASH']}</div>
-                            <div class="meta-row"><span class="meta-label">File Path:</span> {r['_doc']['FILE_PATH']}</div>
-                            <div class="meta-row"><span class="meta-label">Page Count:</span> {r['_doc']['PAGE_COUNT']}</div>
-                            <div class="meta-row"><span class="meta-label">MIME Type:</span> {r['_doc']['MIME_TYPE']}</div>
-                            <div class="meta-row"><span class="meta-label">Language:</span> {r['_doc']['LANGUAGE']}</div>
-                            <div class="meta-row"><span class="meta-label">Extraction Confidence:</span> {r['_doc']['EXTRACTION_CONFIDENCE']}</div>
-                            <div class="meta-row"><span class="meta-label">Topics:</span> {", ".join(r['_doc']['TOPICS'])}</div>
-                            <div class="meta-row"><span class="meta-label">Key Phrases:</span> {", ".join(r['_doc']['KEY_PHRASES'])}</div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # Attachment Metadata Accordion
-            att_acc_id = f"att_acc_{r['DOC_ID']}"
-            att = r["_attachment"]
-            st.markdown(
-                f"""
-                <div class="accordion">
-                    <div class="accordion-header" onclick="
-                        var c = document.getElementById('{att_acc_id}');
-                        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-                    ">
-                        <div class="accordion-header-left">
-                            <div class="accordion-header-main">Attachment Metadata</div>
-                            <div class="accordion-header-sub">Attachment ID: {r['ATTACHMENT_ID']}</div>
-                        </div>
-                    </div>
-                    <div class="accordion-content" id="{att_acc_id}">
-                        <div class="meta-section">
-                            <div class="meta-row"><span class="meta-label">Attachment ID:</span> {r['ATTACHMENT_ID']}</div>
-                            <div class="meta-row"><span class="meta-label">Tracking ID:</span> {r['TRACKING_ID']}</div>
-                            <div class="meta-row"><span class="meta-label">File Name:</span> {escape(r['FILE_NAME'])}</div>
-                            <div class="meta-row"><span class="meta-label">Attachment Type:</span> {att['ATTACHMENT_TYPE']}</div>
-                            <div class="meta-row"><span class="meta-label">Upload User:</span> {att['UPLOAD_USER']}</div>
-                            <div class="meta-row"><span class="meta-label">Upload Timestamp:</span> {att['UPLOAD_TIMESTAMP']}</div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # Case Metadata Accordion
-            case_acc_id = f"case_acc_{r['DOC_ID']}"
-            case = r["_case"]
-            st.markdown(
-                f"""
-                <div class="accordion">
-                    <div class="accordion-header" onclick="
-                        var c = document.getElementById('{case_acc_id}');
-                        c.style.display = (c.style.display == 'block' ? 'none' : 'block');
-                    ">
-                        <div class="accordion-header-left">
-                            <div class="accordion-header-main">Case Metadata</div>
-                            <div class="accordion-header-sub">Case Type: {case['CASE_TYPE']}</div>
-                        </div>
-                    </div>
-                    <div class="accordion-content" id="{case_acc_id}">
-                        <div class="meta-section">
-                            <div class="meta-row"><span class="meta-label">Case Type:</span> {case['CASE_TYPE']}</div>
-                            <div class="meta-row"><span class="meta-label">Status:</span> {case['CASE_STATUS']}</div>
-                            <div class="meta-row"><span class="meta-label">Investigator:</span> {r['INVESTIGATOR_DISPLAY']}</div>
-                            <div class="meta-row"><span class="meta-label">Secondary Investigator:</span> {case.get('SECONDARY_INVESTIGATOR') or 'None'}</div>
-                            <div class="meta-row"><span class="meta-label">Entity:</span> {r['ENTITY_NAME_DISPLAY']}</div>
-                            <div class="meta-row"><span class="meta-label">LOI:</span> {r['LOI_DISPLAY']}</div>
-                            <div class="meta-row"><span class="meta-label">Case Subtype:</span> {case['CASE_SUBTYPE']}</div>
-                            <div class="meta-row"><span class="meta-label">NAIC Group:</span> {case['NAIC_GROUP_NUMBER']}</div>
-                        </div>
-                    </div>
-                </div>
-                """,
-                unsafe_allow_html=True,
-            )
-
-            # --------------------------------------------------------------
-            # 3) Download Button
-            # --------------------------------------------------------------
-            btn_col1, btn_col2 = st.columns([1, 4])
-            with btn_col1:
-                if st.button(f"Download {r['DOC_ID']}", key=f"dl_{r['DOC_ID']}_{idx}"):
-                    allowed, msg = download_document(current_user, r["_doc"], r["_case"])
-                    if allowed:
-                        st.success(msg)
-                    else:
-                        st.error(msg)
-
-            st.markdown("---")
+        st.dataframe(df, use_container_width=True)
 
 # ==============================================================================
 # 🛠 Governance / Integration Inspector
