@@ -893,9 +893,9 @@ if st.session_state.results is not None:
             table_html += f"<td>{escape(r['UPLOAD_DATE'])}</td>"
             table_html += f"<td>{escape(r['UPLOADED_BY_RESOLVED'])}</td>"
 
-            # Actions column — download button triggers hidden Streamlit button
+            # Actions column — JS sets Streamlit session flag (no hidden buttons)
             table_html += (
-                f"<td><button onclick=\"document.getElementById('{dl_key}').click();\" "
+                f"<td><button onclick=\"fetch('/_stcore/streamlit/set?key={dl_key}&value=true');\" "
                 "class='actions-btn'>Download</button></td>"
             )
 
@@ -908,7 +908,7 @@ if st.session_state.results is not None:
         for idx, r in enumerate(results):
             dl_key = f"dl_table_btn_{idx}"
 
-            # If JS triggered the hidden button
+            # If JS triggered the flag
             if st.session_state.get(dl_key):
                 ok, msg = download_document(user, r["_doc"], r["_case"])
                 if ok:
@@ -916,8 +916,8 @@ if st.session_state.results is not None:
                 else:
                     st.error(msg)
 
-            # Invisible Streamlit button that JS will click
-            st.button("hidden", key=dl_key, help="internal", disabled=True)
+                # Reset flag so it doesn't fire again
+                st.session_state[dl_key] = False
 
 
 # ==============================================================================
