@@ -1,7 +1,3 @@
-Here’s a complete, Snowflake‑ready, SD+ID‑only prototype in **one file**.  
-Save it as `smart_docs_sd_id.py` and run with `streamlit run smart_docs_sd_id.py`.
-
-```python
 import streamlit as st
 import re
 from html import escape
@@ -980,4 +976,3 @@ with st.expander("🛠 Governance / Integration Inspector", expanded=False):
                 "PII": "→ full or search-safe representation via SBS join",
             },
         })
-```
